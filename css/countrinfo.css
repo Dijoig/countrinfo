@@ -1,3 +1,16 @@
 #mapId {
-  height: 500px;
+  height: 700px;
+  width: 100%;
+}
+
+h1 {
+  text-align: center;
+}
+
+p {
+  text-align: center;
+}
+
+[class*="col"] {
+  text-align: center;
 }
