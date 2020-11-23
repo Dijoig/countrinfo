@@ -1,3 +1,34 @@
+//defining variables:
+var $goBtn = $("#GoBtn");
+var $countryCode = $('#CountrySelection');
+var feature;
+var currencycode;
+var currency;
+var countryISO2;
+var countryName;
+var countryCapital;
+var countryContinent;
+
+
+//defining function that will call openCageISO2.php using iso2 code from countryBoirdersHandler to get core data from countries:
+const ajaxOpenCage = function(iso2) {
+  $.ajax({
+    url: './php/openCageForward.php',
+    type: 'POST',
+    dataType: 'json',
+    data: {countryName: countryName},
+    success: function(result) {
+      console.log(result);
+      currencyCode = result['data'][0]['annotations']['currency']['iso_code'];
+      currency = result['data'][0]['annotations']['currency']['name'];
+      countryContinent = result['data'][0]['components']['continent'];
+      console.log(countryName + ' currency: ' + currency + '(' + currencyCode + ')' + ', ' + countryContinent);
+    },
+    error: function(error) {
+      console.log(error);
+    }
+  });
+}
 //defining the function that will make the ajax request to the php routine handling the country borders:
 const ajaxCountryBorders = function(iso3) {
   $.ajax({
@@ -9,10 +40,14 @@ const ajaxCountryBorders = function(iso3) {
             if (feature) {
               feature.clearLayers();
             }
-            console.log(result.geometry.coordinates);
+            console.log(result);
+            
+            countryName = result['properties']['name'];
             var myStyle = {"color": "#2D5EF9", "weight": 4, "opacity": 0.5};
             feature = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
             worldMap.fitBounds(feature.getBounds());
+            
+            ajaxOpenCage(countryName);
           },
           error: function(error) {
             console.log(error);
@@ -66,15 +101,12 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 
 
 
-//request to php  routine that retrieves the geojson feature for the selected country at the nav bar:
-var $goBtn = $("#GoBtn");
-var $countryCode = $('#CountrySelection');
-var feature;
 //Go button event listener to make a call to the border handler function, using the selected iso3 from the nav bar:
 $goBtn.click(function() {
   ajaxCountryBorders($('#CountrySelection').val());
 });
 
-//logic for the clear map button:
+
+
 
 
