@@ -2,34 +2,84 @@
 var $goBtn = $("#GoBtn");
 var $countryCode = $('#CountrySelection');
 var feature;
-var currencycode;
-var currency;
-var countryISO2;
+
+//country variables that will be given values from the results of the requests to APIs:
+var fullName;
 var countryName;
-var countryCapital;
-var countryContinent;
+var iso2;
+var iso3;
+var capital;
+var region;
+var population;
+var language;
+var languageCode;
+var currency;
+var currencyCode;
+var currencySymbol;
 
 
-//defining function that will call openCageISO2.php using iso2 code from countryBoirdersHandler to get core data from countries:
-const ajaxOpenCage = function(iso2) {
+
+//defining function that will call openCageForward.php using country name from countryBordersHandler to get core data from countries:
+const ajaxOpenCage = function(country) {
   $.ajax({
     url: './php/openCageForward.php',
     type: 'POST',
     dataType: 'json',
     data: {countryName: countryName},
     success: function(result) {
-      console.log(result);
-      currencyCode = result['data'][0]['annotations']['currency']['iso_code'];
-      currency = result['data'][0]['annotations']['currency']['name'];
-      countryContinent = result['data'][0]['components']['continent'];
-      console.log(countryName + ' currency: ' + currency + '(' + currencyCode + ')' + ', ' + countryContinent);
+      console.log(result); 
     },
     error: function(error) {
       console.log(error);
     }
   });
 }
-//defining the function that will make the ajax request to the php routine handling the country borders:
+
+//defining the function that will call restCountries.php, wich will request the RESTCountries api to retrieve additional data from the country:
+const ajaxRestCountries = function(country) {
+  $.ajax({
+    url: './php/restCountries.php',
+    type: 'POST',
+    dataType: 'json',
+    data: {countryName: countryName},
+    success: function(result) {
+      console.log(result);
+      
+      //assigning variables to the variables declared on top of the code, using the result from RestCountries API:
+      fullName = result['data'][0]['name'];
+      capital = result['data'][0]['capital'];
+      region = result['data'][0]['region'];
+      population = result['data'][0]['population'];
+      language = result['data'][0]['languages'][0]['name'];
+      languageCode = result['data'][0]['languages'][0]['iso639_1'];
+      iso2 = result['data'][0]['alpha2Code'];
+      iso3 = result['data'][0]['alpha3Code'];
+      currency = result['data'][0]['currencies'][0]['name'];
+      currencyCode = result['data'][0]['currencies'][0]['code'];
+      currencySymbol = result['data'][0]['currencies'][0]['symbol'];
+      
+      console.log(fullName);
+      console.log(countryName);
+      console.log(iso2);
+      console.log(iso3);
+      console.log(capital);
+      console.log(region);       
+      console.log(population);
+      console.log(language);
+      console.log(languageCode);
+      console.log(currency);
+      console.log(currencyCode);
+      console.log(currencySymbol);
+      
+      
+    },
+    error: function(error) {
+      console.log(error);
+    }
+  });
+}
+
+//defining the function that will make the ajax request to the php routine handling the country borders and call the routines to the other APIs:
 const ajaxCountryBorders = function(iso3) {
   $.ajax({
            url: './php/countryBordersHandler.php',
@@ -47,7 +97,8 @@ const ajaxCountryBorders = function(iso3) {
             feature = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
             worldMap.fitBounds(feature.getBounds());
             
-            ajaxOpenCage(countryName);
+            //ajaxOpenCage(countryName);
+            ajaxRestCountries(countryName);
           },
           error: function(error) {
             console.log(error);
