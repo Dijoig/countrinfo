@@ -1,6 +1,7 @@
 //defining variables:
 var $goBtn = $("#GoBtn");
 var $countryCode = $('#CountrySelection');
+var exchangeBtn = $('#exchangeBtn');
 var feature;
 
 //country variables that will be given values from the results of the requests to APIs:
@@ -10,12 +11,14 @@ var iso2;
 var iso3;
 var capital;
 var region;
+var subregion;
 var population;
 var language;
 var languageCode;
 var currency;
 var currencyCode;
 var currencySymbol;
+var currencyexchangeUSD;
 
 
 
@@ -27,7 +30,7 @@ const ajaxOpenCage = function(country) {
     dataType: 'json',
     data: {countryName: countryName},
     success: function(result) {
-      console.log(result); 
+      //console.log(result); 
     },
     error: function(error) {
       console.log(error);
@@ -49,6 +52,7 @@ const ajaxRestCountries = function(country) {
       fullName = result['data'][0]['name'];
       capital = result['data'][0]['capital'];
       region = result['data'][0]['region'];
+      subregion = result['data'][0]['subregion'];
       population = result['data'][0]['population'];
       language = result['data'][0]['languages'][0]['name'];
       languageCode = result['data'][0]['languages'][0]['iso639_1'];
@@ -63,7 +67,8 @@ const ajaxRestCountries = function(country) {
       console.log(iso2);
       console.log(iso3);
       console.log(capital);
-      console.log(region);       
+      console.log(region);    
+      console.log(subregion); 
       console.log(population);
       console.log(language);
       console.log(languageCode);
@@ -71,7 +76,59 @@ const ajaxRestCountries = function(country) {
       console.log(currencyCode);
       console.log(currencySymbol);
       
+      ajaxOpenExchangeRate(currencyCode);
+      ajaxOpenWeather(capital);
+    },
+    error: function(error) {
+      console.log(error);
+    }
+  });
+}
+
+//defining function that will make the ajax request to the php routine handling the currency exchange rates:
+const ajaxOpenExchangeRate = function(currencyCode) {
+  $.ajax({
+    url: './php/openExchangeRate.php',
+    type: 'POST',
+    dataType: 'json',
+    success: function(result) {
+      currencyexchangeUSD = result['data'][currencyCode];
+      console.log('1 USD = ' + currencyexchangeUSD + ' ' + currencyCode);
+    },
+    error: function(error) {
+      console.log(error);
+    }
+  });
+}
+
+//defining the function that will make the calls to the routines that will get weather data from openWeather api:
+const ajaxOpenWeather = function(capital) {
+  $.ajax({
+    url: './php/openWeatherCurrent.php',
+    type: 'POST',
+    dataType: 'json',
+    data: {city: capital},
+    success: function(result) {
+      console.log(result);
+      var capitalLat = result['data']['coord']['lat'];
+      var capitalLon = result['data']['coord']['lon'];
       
+      //ajax call to the php routine handling openWeatherOneCall forecast API:
+      $.ajax({
+        url: './php/openWeatherOneCall.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+          lat: capitalLat,
+          lon: capitalLon
+        },
+        success: function(result) {
+          console.log(result);
+        },
+        error: function(error) {
+          console.log(error);
+        }
+      });
     },
     error: function(error) {
       console.log(error);
@@ -105,6 +162,7 @@ const ajaxCountryBorders = function(iso3) {
           }
         });
       }
+
 //declaring onready code:
 $('document').ready(function() {
   //getting user coords:
@@ -140,7 +198,7 @@ $('document').ready(function() {
   }
   
 });
-//getting user iso3 using opencage reverse geocoding:
+
 
 
 //map setup:
@@ -156,6 +214,7 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 $goBtn.click(function() {
   ajaxCountryBorders($('#CountrySelection').val());
 });
+
 
 
 
