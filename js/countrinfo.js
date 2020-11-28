@@ -19,6 +19,7 @@ var currency;
 var currencyCode;
 var currencySymbol;
 var currencyexchangeUSD;
+var covidData;
 
 
 
@@ -76,8 +77,10 @@ const ajaxRestCountries = function(country) {
       console.log(currencyCode);
       console.log(currencySymbol);
       
-      ajaxOpenExchangeRate(currencyCode);
+      ajaxCovid19(iso3);
       ajaxOpenWeather(capital);
+      ajaxOpenExchangeRate(currencyCode);
+      
     },
     error: function(error) {
       console.log(error);
@@ -129,6 +132,22 @@ const ajaxOpenWeather = function(capital) {
           console.log(error);
         }
       });
+    },
+    error: function(error) {
+      console.log(error);
+    }
+  });
+}
+
+//defininf the function that will make the ajax request to covid19 API to get information about covid from the country using isocode 3:
+const ajaxCovid19 = function(iso3) {
+  $.ajax({
+    url: 'https://api.covid19api.com/total/country/' + iso3,
+    type: 'GET',
+    dataType: 'json',
+    success: function(result) {
+      covidData = result[result.length - 1];
+      console.log(covidData);
     },
     error: function(error) {
       console.log(error);
