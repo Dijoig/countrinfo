@@ -1,85 +1,50 @@
 //defining variables:
 var $goBtn = $("#GoBtn");
 var $countryCode = $('#CountrySelection');
-var exchangeBtn = $('#exchangeBtn');
 var feature;
 
-//country variables that will be given values from the results of the requests to APIs:
-var fullName;
-var countryName;
-var iso2;
-var iso3;
-var capital;
-var region;
-var subregion;
-var population;
-var language;
-var languageCode;
-var currency;
-var currencyCode;
-var currencySymbol;
-var currencyexchangeUSD;
-var covidData;
-
-
-
-//defining function that will call openCageForward.php using country name from countryBordersHandler to get core data from countries:
-const ajaxOpenCage = function(country) {
-  $.ajax({
-    url: './php/openCageForward.php',
-    type: 'POST',
-    dataType: 'json',
-    data: {countryName: countryName},
-    success: function(result) {
-      //console.log(result); 
-    },
-    error: function(error) {
-      console.log(error);
-    }
-  });
-}
+//country obj that will store data from the selected country:
+const country = {};
 
 //defining the function that will call restCountries.php, wich will request the RESTCountries api to retrieve additional data from the country:
-const ajaxRestCountries = function(country) {
+const ajaxRestCountries = function(countryName) {
   $.ajax({
     url: './php/restCountries.php',
     type: 'POST',
     dataType: 'json',
     data: {countryName: countryName},
     success: function(result) {
-      console.log(result);
+      //console.log(result);
       
       //assigning variables to the variables declared on top of the code, using the result from RestCountries API:
-      fullName = result['data'][0]['name'];
-      capital = result['data'][0]['capital'];
-      region = result['data'][0]['region'];
-      subregion = result['data'][0]['subregion'];
-      population = result['data'][0]['population'];
-      language = result['data'][0]['languages'][0]['name'];
-      languageCode = result['data'][0]['languages'][0]['iso639_1'];
-      iso2 = result['data'][0]['alpha2Code'];
-      iso3 = result['data'][0]['alpha3Code'];
-      currency = result['data'][0]['currencies'][0]['name'];
-      currencyCode = result['data'][0]['currencies'][0]['code'];
-      currencySymbol = result['data'][0]['currencies'][0]['symbol'];
+      var countryData = result['data'][0];
+      country.fullName = countryData['name'];
+      country.capital = countryData['capital'];
+      country.region = countryData['region'];
+      country.subregion = countryData['subregion'];
+      country.population = countryData['population'];
+      country.flagPath = countryData['flag'];
+      country.wikipedia = 'https://en.wikipedia.org/wiki/' + country.name.replace(' ', '_');
+      country.language = {
+        name: countryData['languages'][0]['name'],
+        code: countryData['languages'][0]['iso639_1']
+      }
+      country.code = {
+        iso2: countryData['alpha2Code'],
+        iso3: countryData['alpha3Code']
+      }
+      country.currency = {
+        name: countryData['currencies'][0]['name'],
+        code: countryData['currencies'][0]['code'],
+        symbol: countryData['currencies'][0]['symbol']
+      }
       
-      console.log(fullName);
-      console.log(countryName);
-      console.log(iso2);
-      console.log(iso3);
-      console.log(capital);
-      console.log(region);    
-      console.log(subregion); 
-      console.log(population);
-      console.log(language);
-      console.log(languageCode);
-      console.log(currency);
-      console.log(currencyCode);
-      console.log(currencySymbol);
+      console.log(country);
       
-      ajaxCovid19(iso3);
-      ajaxOpenWeather(capital);
-      ajaxOpenExchangeRate(currencyCode);
+      ajaxCovid19(country.code.iso3);
+      ajaxOpenWeather(country.capital);
+      ajaxOpenExchangeRate(country.currency.code);
+      ajaxHDI(country.code.iso3);
       
     },
     error: function(error) {
@@ -95,8 +60,8 @@ const ajaxOpenExchangeRate = function(currencyCode) {
     type: 'POST',
     dataType: 'json',
     success: function(result) {
-      currencyexchangeUSD = result['data'][currencyCode];
-      console.log('1 USD = ' + currencyexchangeUSD + ' ' + currencyCode);
+      country.currency.exchangeUSD = result['data'][currencyCode];
+     
     },
     error: function(error) {
       console.log(error);
@@ -112,7 +77,7 @@ const ajaxOpenWeather = function(capital) {
     dataType: 'json',
     data: {city: capital},
     success: function(result) {
-      console.log(result);
+      //console.log(result);
       var capitalLat = result['data']['coord']['lat'];
       var capitalLon = result['data']['coord']['lon'];
       
@@ -126,7 +91,7 @@ const ajaxOpenWeather = function(capital) {
           lon: capitalLon
         },
         success: function(result) {
-          console.log(result);
+          //console.log(result);
         },
         error: function(error) {
           console.log(error);
@@ -139,21 +104,54 @@ const ajaxOpenWeather = function(capital) {
   });
 }
 
-//defininf the function that will make the ajax request to covid19 API to get information about covid from the country using isocode 3:
+//defining the function that will make the ajax request to covid19 API to get information about covid from the country using isocode 3:
 const ajaxCovid19 = function(iso3) {
   $.ajax({
     url: 'https://api.covid19api.com/total/country/' + iso3,
     type: 'GET',
     dataType: 'json',
     success: function(result) {
-      covidData = result[result.length - 1];
-      console.log(covidData);
+      //console.log(result)
+      var latestData = result[result.length - 1];
+      country.covidData = {
+        date: latestData['Date'],
+        confirmed: latestData['Confirmed'],
+        active: latestData['Active'],
+        deaths: latestData['Deaths'],
+        recovered: latestData['Recovered']
+      }
     },
     error: function(error) {
       console.log(error);
     }
   });
 }
+
+//defining the function that will make the ajax request to humanDevelopment.php to get information about HDI from the country using isocode 3:
+const ajaxHDI = function(iso3) {
+  $.ajax({
+    url: './php/humanDevelopment.php',
+    type: 'POST',
+    dataType: 'json',
+    data: {countryCode: iso3},
+    success: function(result) {
+      //console.log(result);
+      var indicatorValues = result['data']['indicator_value'][country.code.iso3];
+      country.humanDevelopmentData = {
+          lifeExpectancyAtBirth: indicatorValues['69206']['2018'],
+          hdiValue: indicatorValues['137506']['2018'],
+          totalUnemploymentRate: indicatorValues['140606']['2018'],
+          gniPerCapita: indicatorValues['141706']['2018'],
+          hdiRank: indicatorValues['146206']['2018']
+          }
+      }
+    ,
+    error: function(error) {
+      console.log(error);
+    }
+  });
+}
+
 
 //defining the function that will make the ajax request to the php routine handling the country borders and call the routines to the other APIs:
 const ajaxCountryBorders = function(iso3) {
@@ -166,15 +164,16 @@ const ajaxCountryBorders = function(iso3) {
             if (feature) {
               feature.clearLayers();
             }
-            console.log(result);
+            //console.log(result);
             
-            countryName = result['properties']['name'];
+            country.name = result['properties']['name'];
+    
             var myStyle = {"color": "#2D5EF9", "weight": 4, "opacity": 0.5};
             feature = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
             worldMap.fitBounds(feature.getBounds());
             
             //ajaxOpenCage(countryName);
-            ajaxRestCountries(countryName);
+            ajaxRestCountries(country.name);
           },
           error: function(error) {
             console.log(error);
