@@ -25,6 +25,8 @@ const ajaxRestCountries = function(countryName) {
       country.population = countryData['population'];
       country.flagPath = countryData['flag'];
       country.wikipedia = 'https://en.wikipedia.org/wiki/' + country.name.replace(' ', '_');
+      country.callingCode = countryData['callingCodes'][0];
+      country.demonym = countryData['demonym'];
       country.language = {
         name: countryData['languages'][0]['name'],
         code: countryData['languages'][0]['iso639_1']
@@ -38,11 +40,14 @@ const ajaxRestCountries = function(countryName) {
         code: countryData['currencies'][0]['code'],
         symbol: countryData['currencies'][0]['symbol']
       }
+      country.regionalBlock = {
+        acronym: countryData['regionalBlocs'][0]['acronym'],
+        name: countryData['regionalBlocs'][0]['name']
+      }
       
       console.log(country);
       
       ajaxCovid19(country.code.iso3);
-      ajaxOpenWeather(country.capital);
       ajaxOpenExchangeRate(country.currency.code);
       ajaxHDI(country.code.iso3);
       
@@ -70,38 +75,22 @@ const ajaxOpenExchangeRate = function(currencyCode) {
 }
 
 //defining the function that will make the calls to the routines that will get weather data from openWeather api:
-const ajaxOpenWeather = function(capital) {
+const ajaxOpenWeather = function(lat, lon) {
   $.ajax({
-    url: './php/openWeatherCurrent.php',
-    type: 'POST',
-    dataType: 'json',
-    data: {city: capital},
-    success: function(result) {
-      //console.log(result);
-      var capitalLat = result['data']['coord']['lat'];
-      var capitalLon = result['data']['coord']['lon'];
-      
-      //ajax call to the php routine handling openWeatherOneCall forecast API:
-      $.ajax({
         url: './php/openWeatherOneCall.php',
         type: 'POST',
         dataType: 'json',
         data: {
-          lat: capitalLat,
-          lon: capitalLon
+          lat: lat,
+          lon: lon
         },
         success: function(result) {
-          //console.log(result);
+          console.log(result);
         },
         error: function(error) {
           console.log(error);
         }
       });
-    },
-    error: function(error) {
-      console.log(error);
-    }
-  });
 }
 
 //defining the function that will make the ajax request to covid19 API to get information about covid from the country using isocode 3:
@@ -152,6 +141,25 @@ const ajaxHDI = function(iso3) {
   });
 }
 
+//defining function that will make the ajax call to the php routine handling the openCageReverse API to get data from the address of the click event on map:
+const openCageReverse = function(lat, lng) {
+   $.ajax({
+        url: './php/openCageReverse.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+          lat: lat,
+          lng: lng
+        },
+        success: function(result) {
+          console.log(result);
+        },
+        error: function(error) {
+          console.log(error);
+        }
+      });
+}
+
 
 //defining the function that will make the ajax request to the php routine handling the country borders and call the routines to the other APIs:
 const ajaxCountryBorders = function(iso3) {
@@ -167,6 +175,9 @@ const ajaxCountryBorders = function(iso3) {
             //console.log(result);
             
             country.name = result['properties']['name'];
+            if (country.name == 'United States') {
+              country.name += ' of America';
+            }
     
             var myStyle = {"color": "#2D5EF9", "weight": 4, "opacity": 0.5};
             feature = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
@@ -181,14 +192,14 @@ const ajaxCountryBorders = function(iso3) {
         });
       }
 
-//declaring onready code:
+//declaring onready code that will get user position and make ajax request to the opencage reverse API, as well as call ajaxCountryBorders using the userISO3 code:
 $('document').ready(function() {
   //getting user coords:
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(pos) {
       var userLat = pos.coords.latitude;
       var userLng = pos.coords.longitude;
-      
+      var userISO3;
   //making call to opencage reverse geocoding api with the coords:
       $.ajax({
         url: './php/openCageReverse.php',
@@ -199,15 +210,15 @@ $('document').ready(function() {
           lng: userLng
         },
         success: function(result) {
-          var userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
-  //call to the ajax request to handle borders using the user iso3 code:
+          userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
           ajaxCountryBorders(userISO3);
+  //call to the ajax request to handle borders using the user iso3 code:
+          
         },
         error: function(error) {
           console.log(error);
         }
       });
-      
     }, function(error) {
       console.log(error);
     })
@@ -233,7 +244,12 @@ $goBtn.click(function() {
   ajaxCountryBorders($('#CountrySelection').val());
 });
 
-
+//defining onMap click event to get weather forecast and current data:
+const onMapClick = function(e) {
+  ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
+  openCageReverse(e.latlng.lat, e.latlng.lng);
+}
+worldMap.on('click', onMapClick);
 
 
 
