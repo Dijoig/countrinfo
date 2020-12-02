@@ -1,12 +1,19 @@
-//defining variables:
+//defining global variables:
 var $goBtn = $("#GoBtn");
 var $countryCode = $('#CountrySelection');
 var feature;
+var clickISO3;
+var userLat;
+var userLng;
+var userISO3;
 
 //country obj that will store data from the selected country:
 const country = {};
 
-//defining the function that will call restCountries.php, wich will request the RESTCountries api to retrieve additional data from the country:
+
+
+//API CALLS BEGIN
+//defining the function that will call restCountries.php, wich will request the RESTCountries api to retrieve additional data from the country and call the other APIs:
 const ajaxRestCountries = function(countryName) {
   $.ajax({
     url: './php/restCountries.php',
@@ -16,7 +23,7 @@ const ajaxRestCountries = function(countryName) {
     success: function(result) {
       //console.log(result);
       
-      //assigning variables to the variables declared on top of the code, using the result from RestCountries API:
+      //assigning values to the properties of the country object, using the result from RestCountries API:
       var countryData = result['data'][0];
       country.fullName = countryData['name'];
       country.capital = countryData['capital'];
@@ -47,6 +54,7 @@ const ajaxRestCountries = function(countryName) {
       
       console.log(country);
       
+      //calling the APIs:
       ajaxCovid19(country.code.iso3);
       ajaxOpenExchangeRate(country.currency.code);
       ajaxHDI(country.code.iso3);
@@ -85,7 +93,7 @@ const ajaxOpenWeather = function(lat, lon) {
           lon: lon
         },
         success: function(result) {
-          console.log(result);
+          //console.log(result);
         },
         error: function(error) {
           console.log(error);
@@ -142,7 +150,7 @@ const ajaxHDI = function(iso3) {
 }
 
 //defining function that will make the ajax call to the php routine handling the openCageReverse API to get data from the address of the click event on map:
-const openCageReverse = function(lat, lng) {
+const ajaxOpenCageReverse = function(lat, lng) {
    $.ajax({
         url: './php/openCageReverse.php',
         type: 'POST',
@@ -153,6 +161,8 @@ const openCageReverse = function(lat, lng) {
         },
         success: function(result) {
           console.log(result);
+          //assigning value to clickISO3 that will be used to make a new call to counterBroderHandler if the user click in any country that not the current highlighted:
+          clickISO3 = result['data'][0]['components']['ISO_3166-1_alpha-3'];
         },
         error: function(error) {
           console.log(error);
@@ -160,8 +170,31 @@ const openCageReverse = function(lat, lng) {
       });
 }
 
+//defining function that will make the ajax call to the php routine handling the openCageReverse API to get data from the address of the user on document load:
+const ajaxOpenCageUser = function(userLat, userLng) {
+  $.ajax({
+        url: './php/openCageReverse.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+          lat: userLat,
+          lng: userLng
+        },
+        success: function(result) {
+          //console.log(result);
+          userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
+          ajaxCountryBorders(userISO3);
+          ajaxOpenWeather(userLat, userLng);
+  //call to the ajax request to handle borders using the user iso3 code:
+          
+        },
+        error: function(error) {
+          console.log(error);
+        }
+      });
+}
 
-//defining the function that will make the ajax request to the php routine handling the country borders and call the routines to the other APIs:
+//defining the function that will make the ajax request to the php routine handling the country borders and call ajaxRestCountries:
 const ajaxCountryBorders = function(iso3) {
   $.ajax({
            url: './php/countryBordersHandler.php',
@@ -191,42 +224,7 @@ const ajaxCountryBorders = function(iso3) {
           }
         });
       }
-
-//declaring onready code that will get user position and make ajax request to the opencage reverse API, as well as call ajaxCountryBorders using the userISO3 code:
-$('document').ready(function() {
-  //getting user coords:
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      var userLat = pos.coords.latitude;
-      var userLng = pos.coords.longitude;
-      var userISO3;
-  //making call to opencage reverse geocoding api with the coords:
-      $.ajax({
-        url: './php/openCageReverse.php',
-        type: 'POST',
-        dataType: 'json',
-        data: {
-          lat: userLat,
-          lng: userLng
-        },
-        success: function(result) {
-          userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
-          ajaxCountryBorders(userISO3);
-  //call to the ajax request to handle borders using the user iso3 code:
-          
-        },
-        error: function(error) {
-          console.log(error);
-        }
-      });
-    }, function(error) {
-      console.log(error);
-    })
-  } else {
-    alert("Your browser doesn't support geolocation, functions that require your location won't be avaiable... You can update your browser or use another one.");
-  }
-  
-});
+//API CALLS END
 
 
 
@@ -239,18 +237,45 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 
 
 
+
+//EVENT HANDLERS BEGIN
 //Go button event listener to make a call to the border handler function, using the selected iso3 from the nav bar:
 $goBtn.click(function() {
   ajaxCountryBorders($('#CountrySelection').val());
 });
 
-//defining onMap click event to get weather forecast and current data:
+//defining onMap click event to get weather and address data from the click:
 const onMapClick = function(e) {
   ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
-  openCageReverse(e.latlng.lat, e.latlng.lng);
+  ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
+  //conditional to check if the click event is on the currently selected country, if it's not the, then the country of the click event will be highlighted:
+  if (clickISO3 != country.code.iso3) {
+  ajaxCountryBorders(clickISO3);
+  }
 }
 worldMap.on('click', onMapClick);
+//EVENT HANDLERS END
 
+
+
+
+//declaring onready code that will get user position and make ajax request to the opencage reverse API, as well as call ajaxCountryBorders and ajaxOpenweather using the location of the user:
+$('document').ready(function() {
+  //getting user coords:
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+  //making call to opencage reverse geocoding api with the coords:
+      ajaxOpenCageUser(userLat, userLng);
+    }, function(error) {
+      console.log(error);
+    })
+  } else {
+    alert("Your browser doesn't support geolocation, functions that require your location won't be avaiable... You can update your browser or use another one.");
+  }
+  
+});
 
 
 
