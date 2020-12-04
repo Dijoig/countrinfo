@@ -1,8 +1,7 @@
 //defining global variables:
-var $goBtn = $("#GoBtn");
+var $goBtn = $("#goBtn");
 var $countryCode = $('#CountrySelection');
 var feature;
-var clickISO3;
 var userLat;
 var userLng;
 var userISO3;
@@ -10,7 +9,40 @@ var userISO3;
 //country obj that will store data from the selected country:
 const country = {};
 
-
+//populating select element using a php routine that will get the countries from countryBroders.geo.json:
+const populateSelectElement = function() {
+  $.ajax({
+    url: './php/populateSelect.php',
+    type: 'POST',
+    datatype: 'json',
+    success: function(result) {
+      var populateJson = JSON.parse(result);
+      //logic to get the country list alphabetically and keep their isocodes:
+      const countries = {};
+      let populateIndex = 0;
+      populateJson.names.forEach(function(name) {
+          countries[name] = populateJson.iso3[populateIndex]; 
+          populateIndex++;
+        });
+      
+      const alphabeticalCountries = {};
+      Object.keys(countries).sort().forEach(function(country) {
+        alphabeticalCountries[country] = countries[country];
+      });
+      
+      //logic to populate the select element using the alphabetical object:
+      Object.keys(alphabeticalCountries).forEach(function(country) {
+        let isoVal = '\"' + alphabeticalCountries[country] + '\"';
+        let optionElement = '<option value=' + isoVal + '>' + country + '</option>';
+        
+        $('#countryOptions').append(optionElement);  
+      }) 
+    },
+    error: function(error) {
+      console.log(error);
+    }
+  });
+}
 
 //API CALLS BEGIN
 //defining the function that will call restCountries.php, wich will request the RESTCountries api to retrieve additional data from the country and call the other APIs:
@@ -21,7 +53,7 @@ const ajaxRestCountries = function(countryName) {
     dataType: 'json',
     data: {countryName: countryName},
     success: function(result) {
-      //console.log(result);
+      console.log(result);
       
       //assigning values to the properties of the country object, using the result from RestCountries API:
       var countryData = result['data'][0];
@@ -34,9 +66,10 @@ const ajaxRestCountries = function(countryName) {
       country.wikipedia = 'https://en.wikipedia.org/wiki/' + country.name.replace(' ', '_');
       country.callingCode = countryData['callingCodes'][0];
       country.demonym = countryData['demonym'];
-      country.language = {
-        name: countryData['languages'][0]['name'],
-        code: countryData['languages'][0]['iso639_1']
+      country.languages = [{}, {}, {}];
+      for (var i=0; i < countryData['languages'].length; i++) {
+        country['languages'][i]['name'] = countryData['languages'][i]['name'];
+        country['languages'][i]['code'] = countryData['languages'][i]['iso639_1'];
       }
       country.code = {
         iso2: countryData['alpha2Code'],
@@ -47,10 +80,12 @@ const ajaxRestCountries = function(countryName) {
         code: countryData['currencies'][0]['code'],
         symbol: countryData['currencies'][0]['symbol']
       }
-      country.regionalBlock = {
-        acronym: countryData['regionalBlocs'][0]['acronym'],
-        name: countryData['regionalBlocs'][0]['name']
-      }
+      if (countryData['regionalBlocs'].length != 0) {
+        country.regionalBlock = {
+          acronym: countryData['regionalBlocs'][0]['acronym'],
+          name: countryData['regionalBlocs'][0]['name']
+          }
+        }
       
       console.log(country);
       
@@ -160,9 +195,8 @@ const ajaxOpenCageReverse = function(lat, lng) {
           lng: lng
         },
         success: function(result) {
-          console.log(result);
-          //assigning value to clickISO3 that will be used to make a new call to counterBroderHandler if the user click in any country that not the current highlighted:
-          clickISO3 = result['data'][0]['components']['ISO_3166-1_alpha-3'];
+          //console.log(result);
+          
         },
         error: function(error) {
           console.log(error);
@@ -241,19 +275,17 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 //EVENT HANDLERS BEGIN
 //Go button event listener to make a call to the border handler function, using the selected iso3 from the nav bar:
 $goBtn.click(function() {
-  ajaxCountryBorders($('#CountrySelection').val());
+  ajaxCountryBorders($('#countryOptions').val());
 });
 
 //defining onMap click event to get weather and address data from the click:
 const onMapClick = function(e) {
   ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
   ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
-  //conditional to check if the click event is on the currently selected country, if it's not the, then the country of the click event will be highlighted:
-  if (clickISO3 != country.code.iso3) {
-  ajaxCountryBorders(clickISO3);
-  }
-}
-worldMap.on('click', onMapClick);
+  
+ }
+
+  worldMap.on('click', onMapClick);
 //EVENT HANDLERS END
 
 
@@ -261,6 +293,8 @@ worldMap.on('click', onMapClick);
 
 //declaring onready code that will get user position and make ajax request to the opencage reverse API, as well as call ajaxCountryBorders and ajaxOpenweather using the location of the user:
 $('document').ready(function() {
+  //populating select element from nav bar:
+  populateSelectElement();
   //getting user coords:
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(pos) {
