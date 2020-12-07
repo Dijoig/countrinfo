@@ -1,13 +1,17 @@
 //defining global variables:
 var $goBtn = $("#goBtn");
+var $myLocationBtn = $('#myLocationBtn');
 var $countryCode = $('#CountrySelection');
 var feature;
 var userLat;
 var userLng;
 var userISO3;
+var clickISO3;
 
 //country obj that will store data from the selected country:
 const country = {};
+//weather object that will store data from the current weather and forecast:
+const weather = {};
 
 //populating select element using a php routine that will get the countries from countryBroders.geo.json:
 const populateSelectElement = function() {
@@ -53,7 +57,7 @@ const ajaxRestCountries = function(countryName) {
     dataType: 'json',
     data: {countryName: countryName},
     success: function(result) {
-      console.log(result);
+      //console.log(result);
       
       //assigning values to the properties of the country object, using the result from RestCountries API:
       var countryData = result['data'][0];
@@ -129,6 +133,32 @@ const ajaxOpenWeather = function(lat, lon) {
         },
         success: function(result) {
           //console.log(result);
+          //adding data to the weather object defined at the top of the code using the openWeather data:
+          var weatherData = result['data'];
+          
+          weather.currentTemp = weatherData['current']['temp'];
+          weather.currentFeelsLike = weatherData['current']['feels_like'];
+          
+          
+          for (var i = 0; i < weatherData['daily'].length; i++) {
+            weather[i] = {
+                timeUnix: weatherData['daily'][i]['dt'],
+              
+                tempAvg: ((weatherData['daily'][i]['temp']['day'] + weatherData['daily'][i]['temp']['morn'] + weatherData['daily'][i]['temp']['eve'] + weatherData['daily'][i]['temp']['night'])/4).toFixed(2),
+              
+                tempFeelsLikeAvg: ((weatherData['daily'][i]['feels_like']['day'] + weatherData['daily'][i]['feels_like']['morn'] + weatherData['daily'][i]['feels_like']['eve'] + weatherData['daily'][i]['feels_like']['night'])/4).toFixed(2),
+              
+                tempMax : weatherData['daily'][i]['temp']['max'],
+                tempMin : weatherData['daily'][i]['temp']['min'],
+                humidity: weatherData['daily'][i]['humidity'],
+                wind: weatherData['daily'][i]['wind_speed'] * 3.6,
+                sky: weatherData['daily'][i]['weather'][0]['description']
+            }
+          }
+        
+            
+          
+          console.log(weather);
         },
         error: function(error) {
           console.log(error);
@@ -195,8 +225,9 @@ const ajaxOpenCageReverse = function(lat, lng) {
           lng: lng
         },
         success: function(result) {
-          //console.log(result);
-          
+            clickISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
+            
+            //console.log(clickISO3);
         },
         error: function(error) {
           console.log(error);
@@ -278,20 +309,35 @@ $goBtn.click(function() {
   ajaxCountryBorders($('#countryOptions').val());
 });
 
+//Back to location buttom event listener that takes the user back to the country his is in:
+$myLocationBtn.click(function() {
+  if (country.code.iso3 != userISO3) {
+    ajaxOpenCageUser(userLat, userLng);
+  } else {
+    alert('Already showing information about the country you are currently in!');
+  }
+});
+
 //defining onMap click event to get weather and address data from the click:
 const onMapClick = function(e) {
   ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
   ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
   
+  setTimeout(function() {
+    if (clickISO3 != country.code.iso3) {
+    ajaxCountryBorders(clickISO3);
+  }
+  }, 600);
+  
+  
  }
-
-  worldMap.on('click', onMapClick);
+worldMap.on('click', onMapClick);
 //EVENT HANDLERS END
 
 
 
 
-//declaring onready code that will get user position and make ajax request to the opencage reverse API, as well as call ajaxCountryBorders and ajaxOpenweather using the location of the user:
+//declaring onready code that will get user position and make ajax request to the opencage reverse API, using the location of the user:
 $('document').ready(function() {
   //populating select element from nav bar:
   populateSelectElement();
