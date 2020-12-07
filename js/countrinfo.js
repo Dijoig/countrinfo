@@ -12,6 +12,18 @@ var clickISO3;
 const country = {};
 //weather object that will store data from the current weather and forecast:
 const weather = {};
+//place object that will store data from the user location or click event on map:
+var place = {};
+//defining function that will be called at openCageUser and openCageReverse to fill the place object:
+const placeUpdate = function(openCageResult) {
+  var placeData = openCageResult['data'][0];
+  place = {};
+  place.formatted = placeData['formatted'];
+  place.timeZone = placeData['annotations']['timezone']['name'];
+  place.components = placeData['components'];
+  
+  console.log(place);
+}
 
 //populating select element using a php routine that will get the countries from countryBroders.geo.json:
 const populateSelectElement = function() {
@@ -97,6 +109,8 @@ const ajaxRestCountries = function(countryName) {
       ajaxCovid19(country.code.iso3);
       ajaxOpenExchangeRate(country.currency.code);
       ajaxHDI(country.code.iso3);
+      
+      wikipediaLink();
       
     },
     error: function(error) {
@@ -225,7 +239,9 @@ const ajaxOpenCageReverse = function(lat, lng) {
           lng: lng
         },
         success: function(result) {
-            clickISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
+          console.log(result);
+          clickISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
+          placeUpdate(result);
             
             //console.log(clickISO3);
         },
@@ -246,10 +262,11 @@ const ajaxOpenCageUser = function(userLat, userLng) {
           lng: userLng
         },
         success: function(result) {
-          //console.log(result);
+          console.log(result);
           userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
           ajaxCountryBorders(userISO3);
           ajaxOpenWeather(userLat, userLng);
+          placeUpdate(result);
   //call to the ajax request to handle borders using the user iso3 code:
           
         },
@@ -357,5 +374,10 @@ $('document').ready(function() {
   
 });
 
+//decalring functions that will comunicate the relevant data to the html layout:
+const wikipediaLink = function() {
+  $('#wikiLink').remove();
+  $('#countryWikipedia').append(`<a id="wikiLink" target="_blank" href=${country.wikipedia}>${country.name} Wikipedia</a>`);
+}
 
 
