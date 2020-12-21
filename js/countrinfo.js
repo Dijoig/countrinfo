@@ -7,6 +7,7 @@ var userLat;
 var userLng;
 var userISO3;
 var clickISO3;
+var textbox;
 
 //country obj that will store data from the selected country:
 const country = {};
@@ -112,6 +113,7 @@ const ajaxRestCountries = function(countryName) {
       
       wikipediaLink();
       
+      
     },
     error: function(error) {
       console.log(error);
@@ -119,7 +121,7 @@ const ajaxRestCountries = function(countryName) {
   });
 }
 
-//defining function that will make the ajax request to the php routine handling the currency exchange rates:
+//defining function that will make the ajax request to the php routine handling the currency exchange rates and generalData() to add information to the html file:
 const ajaxOpenExchangeRate = function(currencyCode) {
   $.ajax({
     url: './php/openExchangeRate.php',
@@ -127,7 +129,7 @@ const ajaxOpenExchangeRate = function(currencyCode) {
     dataType: 'json',
     success: function(result) {
       country.currency.exchangeUSD = result['data'][currencyCode];
-     
+      generalData();
     },
     error: function(error) {
       console.log(error);
@@ -196,6 +198,8 @@ const ajaxCovid19 = function(iso3) {
         deaths: latestData['Deaths'],
         recovered: latestData['Recovered']
       }
+      
+      covid19Data();
     },
     error: function(error) {
       console.log(error);
@@ -203,7 +207,7 @@ const ajaxCovid19 = function(iso3) {
   });
 }
 
-//defining the function that will make the ajax request to humanDevelopment.php to get information about HDI from the country using isocode 3:
+//defining the function that will make the ajax request to humanDevelopment.php to get information about HDI from the country using isocode 3. it will also call lifeQualityData() to send it all to the map overlaid div:
 const ajaxHDI = function(iso3) {
   $.ajax({
     url: './php/humanDevelopment.php',
@@ -220,6 +224,7 @@ const ajaxHDI = function(iso3) {
           gniPerCapita: indicatorValues['141706']['2018'],
           hdiRank: indicatorValues['146206']['2018']
           }
+      lifeQualityData();
       }
     ,
     error: function(error) {
@@ -239,7 +244,7 @@ const ajaxOpenCageReverse = function(lat, lng) {
           lng: lng
         },
         success: function(result) {
-          console.log(result);
+          //console.log(result);
           clickISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
           placeUpdate(result);
             
@@ -262,7 +267,7 @@ const ajaxOpenCageUser = function(userLat, userLng) {
           lng: userLng
         },
         success: function(result) {
-          console.log(result);
+          //console.log(result);
           userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
           ajaxCountryBorders(userISO3);
           ajaxOpenWeather(userLat, userLng);
@@ -374,10 +379,86 @@ $('document').ready(function() {
   
 });
 
-//decalring functions that will comunicate the relevant data to the html layout:
+//decalring functions that will overlay data to the map:
+//function to add the wikipedia link of the current selected country to the nav bar:
 const wikipediaLink = function() {
   $('#wikiLink').remove();
   $('#countryWikipedia').append(`<a id="wikiLink" target="_blank" href=${country.wikipedia}>${country.name} Wikipedia</a>`);
 }
 
+//funcrion to add a list that will show the user general information about the country, overlayed on the map:
+const generalData = function() {
+  var generalHTML = 
+    `
+      <object data="${country.flagPath}" width="100" height="70"> </object>
+      <h1 class="dataH1">${country.name} data</h1>
+      <ul id="generalList">
+        <li>full name: ${country.fullName}</li>
+        <li>ISO2: ${country.code.iso2}, ISO3: ${country.code.iso3}</li>
+        <li>subregion: ${country.subregion}</li>
+        <li>languages: <ul id="lngList"></ul></li>
+        <li>calling code: ${country.callingCode}</li>
+        <li>population: ${country.population}</li>
+        <li>demonym: ${country.demonym}</li>
+        <li>regional block: ${country.regionalBlock.name} (${country.regionalBlock.acronym})</li>
+        <li>currency: ${country.currency.name} (${country.currency.code}, symbol: ${country.currency.symbol})</li>
+        <li>currency exchange: 1 USD = ${country.currency.exchangeUSD} ${country.currency.code}</li>
+      </ul>`;
+   $('#generalData')[0].innerHTML = generalHTML;
+  //looping through the languages list to programatically send them to the lngList <ul> element:
+  country.languages.forEach(language => {
+    if (language.name) {
+    $('#lngList').append(`<li>${language.name} (${language.code})</li>`);
+    }
+  });
+};
 
+//function to add the life quality data overlaid to the map:
+const lifeQualityData = function() {
+  lifeQualityHTML = 
+    ` <h1 class="dataH1">Life quality data</h1>
+      <ul>
+        <li>Human Development Index(HDI): ${country.humanDevelopmentData.hdiValue}</li>
+        <li>HDI rank: ${country.humanDevelopmentData.hdiRank}</li>
+        <li>Gross National Income per capita: ${country.humanDevelopmentData.gniPerCapita}</li>
+        <li>Life Expctancy at Birth: ${country.humanDevelopmentData.lifeExpectancyAtBirth}</li>
+        <li>Total Unemployment Rate: ${country.humanDevelopmentData.totalUnemploymentRate}</li>
+      </ul>`;
+  
+  $('#lifeQualityData')[0].innerHTML = lifeQualityHTML;
+}
+ 
+//function to add the covid data overlaid to the map:
+const covid19Data = function() {
+  covid19DataHTML = 
+    ` <h1 class="dataH1">Covid19 total data</h1>
+      <ul>
+        <li>confirmed cases: </li>
+        <li>active cases: </li>
+        <li>total deaths: </li>
+        <li>total recoverys: </li>
+      </ul>`;
+  
+  $('#covid19Data')[0].innerHTML = covid19DataHTML;
+}
+
+
+//code snippet to create a div on the map that will overlay general data about the country sleected:
+L.Control.textbox = L.Control.extend({
+		onAdd: function(map) {
+		
+    
+		var div = L.DomUtil.create('div');
+		div.id = "countryData";
+		div.innerHTML = `<div id="generalData"></div>
+                    <div id="lifeQualityData"></div>
+                    <div id="covid19Data"></div>`
+		return div;
+		},
+    onRemove: function(map) {
+			//nothing
+		}
+		
+	});
+textbox = function(opts) { return new L.Control.textbox(opts);}
+textbox({ position: 'topleft' }).addTo(worldMap);
