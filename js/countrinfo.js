@@ -21,7 +21,7 @@ const placeUpdate = function(openCageResult) {
   place = {};
   place.formatted = placeData['formatted'];
   place.timeZone = placeData['annotations']['timezone']['name'];
-  place.components = placeData['components'];
+  //place.components = placeData['components'];
   
   console.log(place);
 }
@@ -198,7 +198,6 @@ const ajaxCovid19 = function(iso3) {
         deaths: latestData['Deaths'],
         recovered: latestData['Recovered']
       }
-      
       covid19Data();
     },
     error: function(error) {
@@ -218,11 +217,11 @@ const ajaxHDI = function(iso3) {
       //console.log(result);
       var indicatorValues = result['data']['indicator_value'][country.code.iso3];
       country.humanDevelopmentData = {
-          lifeExpectancyAtBirth: indicatorValues['69206']['2018'],
-          hdiValue: indicatorValues['137506']['2018'],
-          totalUnemploymentRate: indicatorValues['140606']['2018'],
-          gniPerCapita: indicatorValues['141706']['2018'],
-          hdiRank: indicatorValues['146206']['2018']
+          lifeExpectancyAtBirth: indicatorValues['69206']['2019'],
+          hdiValue: indicatorValues['137506']['2019'],
+          totalUnemploymentRate: indicatorValues['140606']['2019'],
+          gniPerCapita: indicatorValues['195706']['2019'],
+          hdiRank: indicatorValues['146206']['2019']
           }
       lifeQualityData();
       }
@@ -269,10 +268,12 @@ const ajaxOpenCageUser = function(userLat, userLng) {
         success: function(result) {
           //console.log(result);
           userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
+          //calls to the ajax routines using the user coords and iso3:
           ajaxCountryBorders(userISO3);
           ajaxOpenWeather(userLat, userLng);
+          //updating the place object with data from the php routines and binding the popup with the user place data:
           placeUpdate(result);
-  //call to the ajax request to handle borders using the user iso3 code:
+          popupGenerator(userLat, userLng);
           
         },
         error: function(error) {
@@ -324,41 +325,6 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 
 
 
-
-//EVENT HANDLERS BEGIN
-//Go button event listener to make a call to the border handler function, using the selected iso3 from the nav bar:
-$goBtn.click(function() {
-  ajaxCountryBorders($('#countryOptions').val());
-});
-
-//Back to location buttom event listener that takes the user back to the country his is in:
-$myLocationBtn.click(function() {
-  if (country.code.iso3 != userISO3) {
-    ajaxOpenCageUser(userLat, userLng);
-  } else {
-    alert('Already showing information about the country you are currently in!');
-  }
-});
-
-//defining onMap click event to get weather and address data from the click:
-const onMapClick = function(e) {
-  ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
-  ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
-  
-  setTimeout(function() {
-    if (clickISO3 != country.code.iso3) {
-    ajaxCountryBorders(clickISO3);
-  }
-  }, 600);
-  
-  
- }
-worldMap.on('click', onMapClick);
-//EVENT HANDLERS END
-
-
-
-
 //declaring onready code that will get user position and make ajax request to the opencage reverse API, using the location of the user:
 $('document').ready(function() {
   //populating select element from nav bar:
@@ -391,7 +357,7 @@ const generalData = function() {
   var generalHTML = 
     `
       <object data="${country.flagPath}" width="100" height="70"> </object>
-      <h1 class="dataH1">${country.name} data</h1>
+      <h1 class="dataH1">${country.name} <button class="infoBtn" id="generalShow">(Toggle info)</button></h1>
       <ul id="generalList">
         <li>full name: ${country.fullName}</li>
         <li>ISO2: ${country.code.iso2}, ISO3: ${country.code.iso3}</li>
@@ -404,7 +370,13 @@ const generalData = function() {
         <li>currency: ${country.currency.name} (${country.currency.code}, symbol: ${country.currency.symbol})</li>
         <li>currency exchange: 1 USD = ${country.currency.exchangeUSD} ${country.currency.code}</li>
       </ul>`;
-   $('#generalData')[0].innerHTML = generalHTML;
+    $('#generalData')[0].innerHTML = generalHTML;
+  
+   //dding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
+    $("#generalShow").on('click', function() {
+      $("#generalList").toggle();
+      event.stopPropagation();
+});
   //looping through the languages list to programatically send them to the lngList <ul> element:
   country.languages.forEach(language => {
     if (language.name) {
@@ -416,8 +388,8 @@ const generalData = function() {
 //function to add the life quality data overlaid to the map:
 const lifeQualityData = function() {
   lifeQualityHTML = 
-    ` <h1 class="dataH1">Life quality data</h1>
-      <ul>
+    ` <h1 class="dataH1">Life quality <button class="infoBtn" id="lifeQualityShow">(Toggle info)</button></h1>
+      <ul id="lifeQualityList">
         <li>Human Development Index(HDI): ${country.humanDevelopmentData.hdiValue}</li>
         <li>HDI rank: ${country.humanDevelopmentData.hdiRank}</li>
         <li>Gross National Income per capita: ${country.humanDevelopmentData.gniPerCapita}</li>
@@ -426,20 +398,32 @@ const lifeQualityData = function() {
       </ul>`;
   
   $('#lifeQualityData')[0].innerHTML = lifeQualityHTML;
+  
+  //adding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
+  $("#lifeQualityShow").on('click', function() {
+    $("#lifeQualityList").toggle();
+    event.stopPropagation();
+});
 }
  
 //function to add the covid data overlaid to the map:
 const covid19Data = function() {
   covid19DataHTML = 
-    ` <h1 class="dataH1">Covid19 total data</h1>
-      <ul>
-        <li>confirmed cases: </li>
-        <li>active cases: </li>
-        <li>total deaths: </li>
-        <li>total recoverys: </li>
+    ` <h1 class="dataH1">Covid19 <button class="infoBtn" id="covidShow">(Toggle info)</button></h1>
+      <ul id="covidList">
+        <li>confirmed cases: ${country.covidData.confirmed}</li>
+        <li>active cases: ${country.covidData.active}</li>
+        <li>total deaths: ${country.covidData.deaths}</li>
+        <li>total recoverys: ${country.covidData.recovered}</li>
       </ul>`;
   
   $('#covid19Data')[0].innerHTML = covid19DataHTML;
+  
+   //adding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
+  $("#covidShow").on('click', function() {
+    $("#covidList").toggle();
+    event.stopPropagation();
+});
 }
 
 
@@ -462,3 +446,45 @@ L.Control.textbox = L.Control.extend({
 	});
 textbox = function(opts) { return new L.Control.textbox(opts);}
 textbox({ position: 'topleft' }).addTo(worldMap);
+
+
+//EVENT HANDLERS BEGIN
+//Go button event listener to make a call to the border handler function, using the selected iso3 from the nav bar:
+$goBtn.click(function() {
+  ajaxCountryBorders($('#countryOptions').val());
+});
+
+//Back to location buttom event listener that takes the user back to the country his is in:
+$myLocationBtn.click(function() {
+  if (country.code.iso3 != userISO3) {
+    ajaxOpenCageUser(userLat, userLng);
+  } else {
+    alert('Already showing information about the country you are currently in!');
+  }
+});
+
+//defining the popup generator funtion that will display the click event place informatiom:
+const popupGenerator = function(lat, lng) {
+  let popup = L.popup();
+  popup
+    .setLatLng({lat: lat, lng: lng})
+    .setContent(`Coordinates: ${lat}(lat), ${lng}(lng)<br>
+                 Address: ${place.formatted}<br>
+                 TimeZone: ${place.timeZone}`)
+    .openOn(worldMap);
+} 
+//defining onMap click event to get weather and address data from the click:
+const onMapClick = function(e) {
+  ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
+  ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
+  console.log(e);
+  setTimeout(function() {
+    if (clickISO3 != country.code.iso3) {
+    ajaxCountryBorders(clickISO3);
+  }
+    popupGenerator(e.latlng.lat, e.latlng.lng);
+  }, 600);
+ }
+
+worldMap.on('click', onMapClick);
+//EVENT HANDLERS END

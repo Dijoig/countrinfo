@@ -2,7 +2,7 @@
 
 $executionStartTime = microtime(true) / 1000;
 
-$url = 'http://ec2-54-174-131-205.compute-1.amazonaws.com/API/HDRO_API.php/country_code=' . $_REQUEST['countryCode'] . '/indicator_id=137506,69206,140606,141706,146206/year=2018/structure=ciy';
+$url = 'http://ec2-54-174-131-205.compute-1.amazonaws.com/API/HDRO_API.php/country_code=' . $_REQUEST['countryCode'] . '/indicator_id=137506,69206,140606,195706,146206/year=2019/structure=ciy';
 
 
 $ch = curl_init();

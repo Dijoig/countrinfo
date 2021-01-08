@@ -1,5 +1,5 @@
 #mapId {
-  height: 700px;
+  height: 800px;
   width: 100%;
 }
 
@@ -13,4 +13,20 @@ p {
 
 [class*="col"] {
   text-align: center;
+}
+
+#countryData {
+  color: darkgreen;
+}
+
+#dataH1 {
+  font-size: 85%;
+}
+
+.infoBtn {
+  font-size: 35%;
+}
+
+#lifeQualityData {
+  
 }
