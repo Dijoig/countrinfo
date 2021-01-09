@@ -110,6 +110,7 @@ const ajaxRestCountries = function(countryName) {
       ajaxCovid19(country.code.iso3);
       ajaxOpenExchangeRate(country.currency.code);
       ajaxHDI(country.code.iso3);
+      ajaxOpenWeatherCapital(country.capital);
       
       wikipediaLink();
       
@@ -180,6 +181,23 @@ const ajaxOpenWeather = function(lat, lon) {
           console.log(error);
         }
       });
+}
+
+//defining function that will make call to openWeather to get the coords for the country capital, and display a marker on the map with the results;
+const ajaxOpenWeatherCapital = function(city) {
+  $.ajax({
+    url: './php/openWeatherCapital.php',
+    type: 'POST',
+    dataType: 'json',
+    data: {city: city},
+    success: function(result) {
+      console.log(result);
+      var markerCity = L.marker([result['data']['lat'], result['data']['lon']]).addTo(worldMap);
+    },
+    error: function(error) {
+      console.log(error);
+    }
+  });
 }
 
 //defining the function that will make the ajax request to covid19 API to get information about covid from the country using isocode 3:
@@ -481,7 +499,8 @@ const weatherUpdate = function() {
         <td>${weather[2].humidity}%</td>
         <td>${weather[3].humidity}%</td>
       </tr>
-     </table>`
+     </table>
+     <p>Currently: ${weather.currentTemp}°C (feels like ${weather.currentFeelsLike}°C)</p>`
   
   $('#weatherDiv')[0].innerHTML = weatherDataHTML;
   
