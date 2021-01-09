@@ -20,13 +20,11 @@ p {
 }
 
 #dataH1 {
-  font-size: 85%;
+  text-align: left;
+  font-size: 50%;
 }
 
 .infoBtn {
   font-size: 35%;
 }
 
-#lifeQualityData {
-  
-}

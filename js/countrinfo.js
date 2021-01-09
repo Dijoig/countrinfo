@@ -21,9 +21,9 @@ const placeUpdate = function(openCageResult) {
   place = {};
   place.formatted = placeData['formatted'];
   place.timeZone = placeData['annotations']['timezone']['name'];
-  //place.components = placeData['components'];
+  place.components = placeData['components'];
   
-  console.log(place);
+  //console.log(place);
 }
 
 //populating select element using a php routine that will get the countries from countryBroders.geo.json:
@@ -167,13 +167,13 @@ const ajaxOpenWeather = function(lat, lon) {
                 tempMax : weatherData['daily'][i]['temp']['max'],
                 tempMin : weatherData['daily'][i]['temp']['min'],
                 humidity: weatherData['daily'][i]['humidity'],
-                wind: weatherData['daily'][i]['wind_speed'] * 3.6,
+                wind: (weatherData['daily'][i]['wind_speed'] * 3.6).toFixed(2),
                 sky: weatherData['daily'][i]['weather'][0]['description']
             }
           }
         
             
-          
+          weatherUpdate();        
           console.log(weather);
         },
         error: function(error) {
@@ -354,10 +354,10 @@ const wikipediaLink = function() {
 
 //funcrion to add a list that will show the user general information about the country, overlayed on the map:
 const generalData = function() {
+  $('#flagObj')[0].data = country.flagPath;
+  $('#countryH1')[0].innerHTML = country.name + '<button class="infoBtn" id="infoToggle">Hide info</button>';
   var generalHTML = 
     `
-      <object data="${country.flagPath}" width="100" height="70"> </object>
-      <h1 class="dataH1">${country.name} <button class="infoBtn" id="generalShow">(Toggle info)</button></h1>
       <ul id="generalList">
         <li>full name: ${country.fullName}</li>
         <li>ISO2: ${country.code.iso2}, ISO3: ${country.code.iso3}</li>
@@ -371,11 +371,17 @@ const generalData = function() {
         <li>currency exchange: 1 USD = ${country.currency.exchangeUSD} ${country.currency.code}</li>
       </ul>`;
     $('#generalData')[0].innerHTML = generalHTML;
+    //$("#generalList").hide();
   
    //dding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
-    $("#generalShow").on('click', function() {
-      $("#generalList").toggle();
+    $("#infoToggle").on('click', function() {
+      $("#dataParent").toggle();
       event.stopPropagation();
+      if ($("#dataParent").css('display') == "none") {
+        $("#infoToggle")[0].innerHTML = 'Show info';
+    } else {
+        $("#infoToggle")[0].innerHTML = 'Hide info';
+    }
 });
   //looping through the languages list to programatically send them to the lngList <ul> element:
   country.languages.forEach(language => {
@@ -388,7 +394,7 @@ const generalData = function() {
 //function to add the life quality data overlaid to the map:
 const lifeQualityData = function() {
   lifeQualityHTML = 
-    ` <h1 class="dataH1">Life quality <button class="infoBtn" id="lifeQualityShow">(Toggle info)</button></h1>
+    ` <h2 class="dataH1">Life quality</h2>
       <ul id="lifeQualityList">
         <li>Human Development Index(HDI): ${country.humanDevelopmentData.hdiValue}</li>
         <li>HDI rank: ${country.humanDevelopmentData.hdiRank}</li>
@@ -398,18 +404,13 @@ const lifeQualityData = function() {
       </ul>`;
   
   $('#lifeQualityData')[0].innerHTML = lifeQualityHTML;
-  
-  //adding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
-  $("#lifeQualityShow").on('click', function() {
-    $("#lifeQualityList").toggle();
-    event.stopPropagation();
-});
+  //$('#lifeQualityData').hide();
 }
  
 //function to add the covid data overlaid to the map:
 const covid19Data = function() {
   covid19DataHTML = 
-    ` <h1 class="dataH1">Covid19 <button class="infoBtn" id="covidShow">(Toggle info)</button></h1>
+    ` <h2 class="dataH1">Covid19</h2>
       <ul id="covidList">
         <li>confirmed cases: ${country.covidData.confirmed}</li>
         <li>active cases: ${country.covidData.active}</li>
@@ -418,14 +419,73 @@ const covid19Data = function() {
       </ul>`;
   
   $('#covid19Data')[0].innerHTML = covid19DataHTML;
-  
-   //adding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
-  $("#covidShow").on('click', function() {
-    $("#covidList").toggle();
-    event.stopPropagation();
-});
+  //$('#covid19Data').hide();
 }
 
+//function to add weather data overlaid to the map:
+const weatherUpdate = function() {
+  var d = new Date();
+  var todayMiliseconds = d.getTime();
+  var day1 = new Date(todayMiliseconds);
+  var day2 = new Date(todayMiliseconds + 86400000);
+  var day3 = new Date(todayMiliseconds + 86400000*2);
+  var day4 = new Date(todayMiliseconds + 86400000*3);
+  weatherDataHTML = 
+    `<table id="weatherTable">
+      <tr>
+        <th></th>
+        <th>${day1.toDateString()}</th>
+        <th>${day2.toDateString()}</th>
+        <th>${day3.toDateString()}</th>
+        <th>${day4.toDateString()}</th>
+      </tr>
+      <tr>
+        <th>Avg temp</th>
+        <td>${weather[0].tempAvg}°C</td>
+        <td>${weather[1].tempAvg}°C</td>
+        <td>${weather[2].tempAvg}°C</td>
+        <td>${weather[3].tempAvg}°C</td>
+      </tr>
+      <tr>
+        <th>Max temp</th>
+        <td>${weather[0].tempMax}°C</td>
+        <td>${weather[1].tempMax}°C</td>
+        <td>${weather[2].tempMax}°C</td>
+        <td>${weather[3].tempMax}°C</td>
+      </tr>
+      <tr>
+        <th>Min temp</th>
+        <td>${weather[0].tempMin}°C</td>
+        <td>${weather[1].tempMin}°C</td>
+        <td>${weather[2].tempMin}°C</td>
+        <td>${weather[3].tempMin}°C</td>
+      </tr>
+      <tr>
+        <th>Wind</th>
+        <td>${weather[0].wind}km/h</td>
+        <td>${weather[1].wind}km/h</td>
+        <td>${weather[2].wind}km/h</td>
+        <td>${weather[3].wind}km/h</td>
+      </tr>
+      <tr>
+        <th>Sky</th>
+        <td>${weather[0].sky}</td>
+        <td>${weather[1].sky}</td>
+        <td>${weather[2].sky}</td>
+        <td>${weather[3].sky}</td>
+      </tr>
+      <tr>
+        <th>Humidity</th>
+        <td>${weather[0].humidity}%</td>
+        <td>${weather[1].humidity}%</td>
+        <td>${weather[2].humidity}%</td>
+        <td>${weather[3].humidity}%</td>
+      </tr>
+     </table>`
+  
+  $('#weatherDiv')[0].innerHTML = weatherDataHTML;
+  
+}
 
 //code snippet to create a div on the map that will overlay general data about the country sleected:
 L.Control.textbox = L.Control.extend({
@@ -434,9 +494,13 @@ L.Control.textbox = L.Control.extend({
     
 		var div = L.DomUtil.create('div');
 		div.id = "countryData";
-		div.innerHTML = `<div id="generalData"></div>
-                    <div id="lifeQualityData"></div>
-                    <div id="covid19Data"></div>`
+		div.innerHTML = `<object id="flagObj" width="100px" height="70px"></object>
+                    <h1 class="dataH1" id="countryH1"></h1>
+                    <div id="dataParent">
+                      <div id="generalData"></div>
+                      <div id="lifeQualityData"></div>
+                      <div id="covid19Data"></div>
+                    </div>`
 		return div;
 		},
     onRemove: function(map) {
@@ -447,6 +511,23 @@ L.Control.textbox = L.Control.extend({
 textbox = function(opts) { return new L.Control.textbox(opts);}
 textbox({ position: 'topleft' }).addTo(worldMap);
 
+//code snippet to create a div on the map that will overlay weather data about the location clicked:
+L.Control.textbox = L.Control.extend({
+		onAdd: function(map) {
+		
+    
+		var weatherDiv = L.DomUtil.create('div');
+		weatherDiv.id = "weatherDiv";
+		weatherDiv.innerHTML = `WEATHER`
+		return weatherDiv;
+		},
+    onRemove: function(map) {
+			//nothing
+		}
+		
+	});
+weatherBox = function(opts) { return new L.Control.textbox(opts);}
+weatherBox({ position: 'topright' }).addTo(worldMap);
 
 //EVENT HANDLERS BEGIN
 //Go button event listener to make a call to the border handler function, using the selected iso3 from the nav bar:
@@ -468,16 +549,26 @@ const popupGenerator = function(lat, lng) {
   let popup = L.popup();
   popup
     .setLatLng({lat: lat, lng: lng})
-    .setContent(`Coordinates: ${lat}(lat), ${lng}(lng)<br>
-                 Address: ${place.formatted}<br>
-                 TimeZone: ${place.timeZone}`)
+    .setContent(`Coordinates: ${lat.toFixed(4)}(lat), ${lng.toFixed(4)}(lng)<br>
+                 Location: ${place.formatted}<br>
+                 TimeZone: ${place.timeZone}<br>
+                 <button id="weatherBtn">Show weather</button>`)
     .openOn(worldMap);
+  //defining the show weather button listener in this scope so it is functional after clicking on other locations:
+  $("#weatherBtn").on('click', function() {
+      $("#weatherDiv").toggle();
+      event.stopPropagation();
+      if ($("#weatherDiv").css('display') == "none") {
+      $("#weatherBtn")[0].innerHTML = 'Show weather';
+    } else {
+      $("#weatherBtn")[0].innerHTML = 'Hide weather';
+    }
+  });
 } 
 //defining onMap click event to get weather and address data from the click:
 const onMapClick = function(e) {
   ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
   ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
-  console.log(e);
   setTimeout(function() {
     if (clickISO3 != country.code.iso3) {
     ajaxCountryBorders(clickISO3);
@@ -487,4 +578,5 @@ const onMapClick = function(e) {
  }
 
 worldMap.on('click', onMapClick);
+
 //EVENT HANDLERS END
