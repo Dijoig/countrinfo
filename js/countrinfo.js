@@ -1,7 +1,4 @@
 //defining global variables:
-var $goBtn = $("#goBtn");
-var $myLocationBtn = $('#myLocationBtn');
-var $countryCode = $('#CountrySelection');
 var feature;
 var userLat;
 var userLng;
@@ -52,8 +49,8 @@ const populateSelectElement = function() {
         let isoVal = '\"' + alphabeticalCountries[country] + '\"';
         let optionElement = '<option value=' + isoVal + '>' + country + '</option>';
         
-        $('#countryOptions').append(optionElement);  
-      }) 
+        $('#countryOptions').append(optionElement);
+      });
     },
     error: function(error) {
       console.log(error);
@@ -73,7 +70,8 @@ const ajaxRestCountries = function(countryName) {
       //console.log(result);
       
       //assigning values to the properties of the country object, using the result from RestCountries API:
-      var countryData = result['data'][0];
+      var countryData = result['data'];
+      //console.log(countryData);
       country.fullName = countryData['name'];
       country.capital = countryData['capital'];
       country.region = countryData['region'];
@@ -83,8 +81,9 @@ const ajaxRestCountries = function(countryName) {
       country.wikipedia = 'https://en.wikipedia.org/wiki/' + country.name.replace(' ', '_');
       country.callingCode = countryData['callingCodes'][0];
       country.demonym = countryData['demonym'];
-      country.languages = [{}, {}, {}];
+      country.languages = [];
       for (var i=0; i < countryData['languages'].length; i++) {
+        country.languages.push({});
         country['languages'][i]['name'] = countryData['languages'][i]['name'];
         country['languages'][i]['code'] = countryData['languages'][i]['iso639_1'];
       }
@@ -175,7 +174,7 @@ const ajaxOpenWeather = function(lat, lon) {
         
             
           weatherUpdate();        
-          console.log(weather);
+          //console.log(weather);
         },
         error: function(error) {
           console.log(error);
@@ -191,7 +190,7 @@ const ajaxOpenWeatherCapital = function(city) {
     dataType: 'json',
     data: {city: city},
     success: function(result) {
-      console.log(result);
+      //console.log(result);
       var markerCity = L.marker([result['data']['lat'], result['data']['lon']]).addTo(worldMap);
     },
     error: function(error) {
@@ -208,6 +207,7 @@ const ajaxCovid19 = function(iso3) {
     dataType: 'json',
     success: function(result) {
       //console.log(result)
+      if (result.length > 0) {
       var latestData = result[result.length - 1];
       country.covidData = {
         date: latestData['Date'],
@@ -215,6 +215,15 @@ const ajaxCovid19 = function(iso3) {
         active: latestData['Active'],
         deaths: latestData['Deaths'],
         recovered: latestData['Recovered']
+        }
+      } else {
+        country.covidData = {
+        date: 'not available',
+        confirmed: 'not available',
+        active: 'not available',
+        deaths: 'not available',
+        recovered: 'not available'
+      }
       }
       covid19Data();
     },
@@ -312,18 +321,16 @@ const ajaxCountryBorders = function(iso3) {
               feature.clearLayers();
             }
             //console.log(result);
-            
             country.name = result['properties']['name'];
-            if (country.name == 'United States') {
-              country.name += ' of America';
-            }
-    
+            let isoCode = result['properties']['iso_a3'];
+        
+            
             var myStyle = {"color": "#2D5EF9", "weight": 4, "opacity": 0.5};
             feature = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
             worldMap.fitBounds(feature.getBounds());
             
             //ajaxOpenCage(countryName);
-            ajaxRestCountries(country.name);
+            ajaxRestCountries(isoCode);
           },
           error: function(error) {
             console.log(error);
@@ -380,7 +387,7 @@ const generalData = function() {
         <li>full name: ${country.fullName}</li>
         <li>ISO2: ${country.code.iso2}, ISO3: ${country.code.iso3}</li>
         <li>subregion: ${country.subregion}</li>
-        <li>languages: <ul id="lngList"></ul></li>
+        <li id="lngList">languages: </li>
         <li>calling code: ${country.callingCode}</li>
         <li>population: ${country.population}</li>
         <li>demonym: ${country.demonym}</li>
@@ -404,7 +411,7 @@ const generalData = function() {
   //looping through the languages list to programatically send them to the lngList <ul> element:
   country.languages.forEach(language => {
     if (language.name) {
-    $('#lngList').append(`<li>${language.name} (${language.code})</li>`);
+    $('#lngList')[0].insertAdjacentHTML('beforeend', `${language.name} (${language.code}), `);
     }
   });
 };
@@ -550,12 +557,12 @@ weatherBox({ position: 'topright' }).addTo(worldMap);
 
 //EVENT HANDLERS BEGIN
 //Go button event listener to make a call to the border handler function, using the selected iso3 from the nav bar:
-$goBtn.click(function() {
+$("#goBtn").click(function() {
   ajaxCountryBorders($('#countryOptions').val());
 });
 
 //Back to location buttom event listener that takes the user back to the country his is in:
-$myLocationBtn.click(function() {
+$('#myLocationBtn').click(function() {
   if (country.code.iso3 != userISO3) {
     ajaxOpenCageUser(userLat, userLng);
   } else {
@@ -571,9 +578,14 @@ const popupGenerator = function(lat, lng) {
     .setContent(`Coordinates: ${lat.toFixed(4)}(lat), ${lng.toFixed(4)}(lng)<br>
                  Location: ${place.formatted}<br>
                  TimeZone: ${place.timeZone}<br>
-                 <button id="weatherBtn">Show weather</button>`)
+                 <button id="weatherBtn">Hide weather</button>`)
     .openOn(worldMap);
   //defining the show weather button listener in this scope so it is functional after clicking on other locations:
+  if ($("#weatherDiv").css('display') == "none") {
+      $("#weatherBtn")[0].innerHTML = 'Show weather';
+    } else {
+      $("#weatherBtn")[0].innerHTML = 'Hide weather';
+    }
   $("#weatherBtn").on('click', function() {
       $("#weatherDiv").toggle();
       event.stopPropagation();
@@ -595,7 +607,27 @@ const onMapClick = function(e) {
     popupGenerator(e.latlng.lat, e.latlng.lng);
   }, 600);
  }
-
 worldMap.on('click', onMapClick);
 
 //EVENT HANDLERS END
+
+//Test functions
+/*var i = 0;
+var testList = [];
+
+  
+setTimeout(function() {
+  setInterval(function(){
+    if (i < $('#countryOptions > option').length) {
+      var isoTest = $('#countryOptions > option')[i].value;
+      i++;
+      try {
+        ajaxCountryBorders(isoTest);
+      } catch(e) {
+        testList.push(isoTest);
+      }
+    } else {
+      console.log(testList);
+    }
+  }, 5000)
+}, 5000);*/

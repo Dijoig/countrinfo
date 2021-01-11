@@ -4,7 +4,7 @@ $executionStartTime = microtime(true) / 1000;
 
 $countryName = str_replace(' ', '%20', $_REQUEST['countryName']);
 
-$url = 'https://restcountries.eu/rest/v2/name/' . $countryName;
+$url = 'https://restcountries.eu/rest/v2/alpha/' . $countryName;
 
 
 $ch = curl_init();
