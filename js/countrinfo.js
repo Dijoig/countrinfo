@@ -51,6 +51,7 @@ const populateSelectElement = function() {
         
         $('#countryOptions').append(optionElement);
       });
+      $('#countryOptions > option[value="-99"]').remove();
     },
     error: function(error) {
       console.log(error);
@@ -107,10 +108,10 @@ const ajaxRestCountries = function(countryName) {
       
       //calling the APIs:
       ajaxCovid19(country.code.iso3);
-      ajaxOpenExchangeRate(country.currency.code);
+      //ajaxOpenExchangeRate(country.currency.code);
       ajaxHDI(country.code.iso3);
       ajaxOpenWeatherCapital(country.capital);
-      
+      generalData();
       wikipediaLink();
       
       
@@ -242,16 +243,32 @@ const ajaxHDI = function(iso3) {
     data: {countryCode: iso3},
     success: function(result) {
       //console.log(result);
-      var indicatorValues = result['data']['indicator_value'][country.code.iso3];
-      country.humanDevelopmentData = {
+      if (result['data']['country_name']) {
+        var indicatorValues = result['data']['indicator_value'][country.code.iso3];
+        country.humanDevelopmentData = {
           lifeExpectancyAtBirth: indicatorValues['69206']['2019'],
-          hdiValue: indicatorValues['137506']['2019'],
-          totalUnemploymentRate: indicatorValues['140606']['2019'],
-          gniPerCapita: indicatorValues['195706']['2019'],
-          hdiRank: indicatorValues['146206']['2019']
+          totalUnemploymentRate: indicatorValues['140606']['2019']
+        }
+          if (country.code.iso3 == "SOM" || country.code.iso3 == "PRK") {
+            country.humanDevelopmentData.hdiValue = "not availabe";
+            country.humanDevelopmentData.gniPerCapita = "not availabe";
+            country.humanDevelopmentData.hdiRank = "not availabe";
+            } else {
+            country.humanDevelopmentData.hdiValue = indicatorValues['137506']['2019'];
+            country.humanDevelopmentData.gniPerCapita = indicatorValues['195706']['2019'];
+            country.humanDevelopmentData.hdiRank = indicatorValues['146206']['2019'];
           }
-      lifeQualityData();
+      } else {
+        country.humanDevelopmentData = {
+          lifeExpectancyAtBirth: "not available",
+          hdiValue: "not available",
+          totalUnemploymentRate: "not available",
+          gniPerCapita: "not available",
+          hdiRank: "not available"
+        }
       }
+      lifeQualityData();
+    }
     ,
     error: function(error) {
       console.log(error);
