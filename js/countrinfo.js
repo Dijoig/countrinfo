@@ -396,7 +396,7 @@ const wikipediaLink = function() {
 
 //funcrion to add a list that will show the user general information about the country, overlayed on the map:
 const generalData = function() {
-  $('#flagObj')[0].data = country.flagPath;
+  $('#flagObj')[0].src = country.flagPath;
   $('#countryH1')[0].innerHTML = country.name + '<button class="infoBtn" id="infoToggle">Hide info</button>';
   var generalHTML = 
     `
@@ -415,7 +415,12 @@ const generalData = function() {
     $('#generalData')[0].innerHTML = generalHTML;
     //$("#generalList").hide();
   
-   //dding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
+   //adding the logic to the toggle info button, so the user can customize the visibility of the data on the map:
+    if ($("#dataParent").css('display') == "none") {
+        $("#infoToggle")[0].innerHTML = 'Show info';
+    } else {
+        $("#infoToggle")[0].innerHTML = 'Hide info';
+    }
     $("#infoToggle").on('click', function() {
       $("#dataParent").toggle();
       event.stopPropagation();
@@ -537,7 +542,7 @@ L.Control.textbox = L.Control.extend({
     
 		var div = L.DomUtil.create('div');
 		div.id = "countryData";
-		div.innerHTML = `<object id="flagObj" width="100px" height="70px"></object>
+		div.innerHTML = `<img id="flagObj" width="100px" height="70px"></object>
                     <h1 class="dataH1" id="countryH1"></h1>
                     <div id="dataParent">
                       <div id="generalData"></div>
