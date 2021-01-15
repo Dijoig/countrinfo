@@ -79,7 +79,7 @@ const ajaxRestCountries = function(countryName) {
       country.subregion = countryData['subregion'];
       country.population = countryData['population'];
       country.flagPath = countryData['flag'];
-      country.wikipedia = 'https://en.wikipedia.org/wiki/' + country.name.replace(' ', '_');
+      country.wikipedia = 'https://en.wikipedia.org/wiki/' + country.fullName.replace(/ /g, '_');
       country.callingCode = countryData['callingCodes'][0];
       country.demonym = countryData['demonym'];
       country.languages = [];
@@ -338,9 +338,9 @@ const ajaxCountryBorders = function(iso3) {
               feature.clearLayers();
             }
             //console.log(result);
-            country.name = result['properties']['name'];
+          
             let isoCode = result['properties']['iso_a3'];
-        
+            country.name = result['properties']['name'];
             
             var myStyle = {"color": "#2D5EF9", "weight": 4, "opacity": 0.5};
             feature = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
@@ -391,7 +391,7 @@ $('document').ready(function() {
 //function to add the wikipedia link of the current selected country to the nav bar:
 const wikipediaLink = function() {
   $('#wikiLink').remove();
-  $('#countryWikipedia').append(`<a id="wikiLink" target="_blank" href=${country.wikipedia}>${country.name} Wikipedia</a>`);
+  $('#countryWikipedia').append(`<a id="wikiLink" target="_blank" href=${country.wikipedia}>${country.fullName} Wikipedia</a>`);
 }
 
 //funcrion to add a list that will show the user general information about the country, overlayed on the map:
@@ -404,6 +404,7 @@ const generalData = function() {
         <li>full name: ${country.fullName}</li>
         <li>ISO2: ${country.code.iso2}, ISO3: ${country.code.iso3}</li>
         <li>subregion: ${country.subregion}</li>
+        <li>capital: ${country.capital}</li>
         <li id="lngList">languages: </li>
         <li>calling code: ${country.callingCode}</li>
         <li>population: ${country.population}</li>
