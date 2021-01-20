@@ -1,0 +1,25 @@
+#mapId {
+  height: 100vh;
+  width: 100%;
+}
+
+.leaflet-top {
+  width: 100%;
+}
+
+#topLeftDiv {
+  width: 100%;
+}
+
+[class*="col"] {
+  
+}
+
+#countryOptions {
+  width: 8rem;
+  font-size: 120%;
+}
+
+#covidTableDiv {
+  display: none;
+}
