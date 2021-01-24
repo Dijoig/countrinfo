@@ -4,7 +4,8 @@ var userLat;
 var userLng;
 var userISO3;
 var clickISO3;
-var textbox;
+var infoTableStatus;
+
 
 //country obj that will store data from the selected country:
 const country = {};
@@ -49,9 +50,9 @@ const populateSelectElement = function() {
         let isoVal = '\"' + alphabeticalCountries[country] + '\"';
         let optionElement = '<option value=' + isoVal + '>' + country + '</option>';
         
-        $('#countryOptions').append(optionElement);
+        $('#countrySelection').append(optionElement);
       });
-      $('#countryOptions > option[value="-99"]').remove();
+      $('#countrySelection > option[value="-99"]').remove();
     },
     error: function(error) {
       console.log(error);
@@ -105,6 +106,10 @@ const ajaxRestCountries = function(countryName) {
         }
       
       console.log(country);
+      //logic to pudate the general data table in case it is the one visible:
+      if (infoTableStatus == "general data") {
+        generalDataTableUpdate();
+      }
       
       //calling the APIs:
       ajaxCovid19(country.code.iso3);
@@ -226,7 +231,7 @@ const ajaxCovid19 = function(iso3) {
         recovered: 'not available'
       }
       }
-      covid19Data();
+      //covid19Data();
     },
     error: function(error) {
       console.log(error);
@@ -358,7 +363,7 @@ const ajaxCountryBorders = function(iso3) {
 
 
 
-//map setup:
+//MAP SETUP BEGINS:
 //creating map variable:
 var worldMap = L.map('mapId', {zoomControl: false});
 //adding zoom buttom to the bottom right
@@ -369,9 +374,9 @@ L.control.zoom({
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
 	attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
 }).addTo(worldMap);
+//MAP SETUP ENDS
 
-
-
+//DOCUMENT READY EVENT BEGINS
 //declaring onready code that will get user position and make ajax request to the opencage reverse API, using the location of the user:
 $('document').ready(function() {
   //populating select element from nav bar:
@@ -391,68 +396,16 @@ $('document').ready(function() {
   }
   
 });
+//DOCUMENT READY EVENT ENDS
 
-//decalring functions that will overlay data to the map:
-//function to add the wikipedia link of the current selected country to the nav bar:
-/*const wikipediaLink = function() {
-  $('#wikiLink').remove();
-  $('#countryWikipedia').append(`<a id="wikiLink" target="_blank" href=${country.wikipedia}>${country.fullName} Wikipedia</a>`);
-}*/
 
-//funcrion to add a list that will show the user general information about the country, overlayed on the map:
-/*const generalData = function() {
-  $('#flagImg')[0].src = country.flagPath;
-  
-};*/
-
-//function to add the life quality data overlaid to the map:
-/*const lifeQualityData = function() {
-  lifeQualityHTML = 
-    ` <h2 class="dataH1">Life quality</h2>
-      <ul id="lifeQualityList">
-        <li>Human Development Index(HDI): ${country.humanDevelopmentData.hdiValue}</li>
-        <li>HDI rank: ${country.humanDevelopmentData.hdiRank}</li>
-        <li>Gross National Income per capita: ${country.humanDevelopmentData.gniPerCapita}</li>
-        <li>Life Expctancy at Birth: ${country.humanDevelopmentData.lifeExpectancyAtBirth}</li>
-        <li>Total Unemployment Rate: ${country.humanDevelopmentData.totalUnemploymentRate}</li>
-      </ul>`;
-  
-  $('#lifeQualityData')[0].innerHTML = lifeQualityHTML;
-  //$('#lifeQualityData').hide();
-}*/
  
-//function to add the covid data overlaid to the map:
-const covid19Data = function() {
-  covidDataHTML = `
-    <div class="col-2-xs" id="covidTableDiv">
-      <table>
-        <tbody>
-          <tr>
-            <td>Cases</td>
-            <td>5555</td>
-          </tr>
-          <tr>
-            <td>Deaths</td>
-            <td>333</td>
-          </tr>
-          <tr>
-            <td>Recovered</td>
-            <td>444</td>
-          </tr>
-          <tr>
-            <td>Active</td>
-            <td>777</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-`;
+
+
   
-  $('#covidDataRow')[0].insertAdjacentHTML('beforeend', covidDataHTML);
-  //$('#covid19Data').hide();
-}
+ 
 //function to add weather data overlaid to the map:
-const weatherUpdate = function() {
+/*const weatherUpdate = function() {
   var d = new Date();
   var todayMiliseconds = d.getTime();
   var day1 = new Date(todayMiliseconds);
@@ -515,133 +468,181 @@ const weatherUpdate = function() {
   
   $('#weatherDiv')[0].innerHTML = weatherDataHTML;
   
-}
+}*/
 
-//HTML ELEMENTS OVERLAY BEGIN
-//code snippet to create a div on the map that will overlay general data about the country sleected:
-/*L.Control.textbox = L.Control.extend({
-		onAdd: function(map) {
-		
-    
-		var div = L.DomUtil.create('div');
-		div.id = "countryData";
-		div.innerHTML = `<img id="flagObj" width="100px" height="70px"></object>
-                    <h1 class="dataH1" id="countryH1"></h1>
-                    <div id="dataParent">
-                      <div id="generalData"></div>
-                      <div id="lifeQualityData"></div>
-                      <div id="covid19Data"></div>
-                    </div>`
-		return div;
-		},
-    onRemove: function(map) {
-			//nothing
-		}
-		
-	});
-textbox = function(opts) { return new L.Control.textbox(opts);}
-textbox({ position: 'topleft' }).addTo(worldMap);*/
-
-//code snippet to create a div on the map that will overlay weather data about the location clicked:
-/*L.Control.textbox = L.Control.extend({
-		onAdd: function(map) {
-		
-    
-		var weatherDiv = L.DomUtil.create('div');
-		weatherDiv.id = "weatherDiv";
-		weatherDiv.innerHTML = `WEATHER`
-		return weatherDiv;
-		},
-    onRemove: function(map) {
-			//nothing
-		}
-		
-	});
-weatherBox = function(opts) { return new L.Control.textbox(opts);}
-weatherBox({ position: 'topright' }).addTo(worldMap);*/
-
+//INSERTION OF DIV ELEMENTS TO THE MAP BEGIN:
+//defining function to create a div element on the map:
+function createDiv(idName, className, position, HTML) {
 L.Control.textbox = L.Control.extend({
 		onAdd: function(map) {
-		
-    
-		var topLeftDiv = L.DomUtil.create('div');
-		topLeftDiv.id = "topLeftDiv";
-    topLeftDiv.class = "container-fluid";
-		topLeftDiv.innerHTML = `
-      <div class="row">
-
-        <div class="col-sm">
-        </div>
-
-        <div class="col-sm-6 text-center">
-          <select id="countryOptions"></select>
-        </div>
-          
-        <div class="col-sm">
-          3
-        </div>
-
-      </div>
-
-      
-      <div id="btnRow" class="row">
-
-        <div class="row">
-          <div class="col-xs mt-2">
-            <button class="btn btn-info">Info</button>
-          </div>
-        </div>
-      
-        <div class="row" id="covidDataRow">
-          <div class="col-2-xs mt-2">
-            <button class="btn btn-info" id="covidBtn">Covid</button>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-xs mt-2">
-            <button class="btn btn-info">HDI</button>
-          </div>
-        </div>
-
-      </div>
-      
-`;
-		return topLeftDiv;
-		},
-    onRemove: function(map) {
-			//nothing
+      var div = L.DomUtil.create('div');
+      div.id = idName;
+      div.class = className;
+      div.innerHTML = HTML;
+      return div;
 		}
-		
 	});
-topLeftDivBox = function(opts) { return new L.Control.textbox(opts);}
-topLeftDivBox({ position: 'topleft' }).addTo(worldMap);
-//HTML ELEMENTS OVERLAY END
+const newDiv = function(opts) { return new L.Control.textbox(opts);}
+newDiv({ position: position}).addTo(worldMap);
+}
+//seeting up the content of the top left div:
+var topLeftDivHTML = `<div class="container-fluid">
+    
+    <div class="row">
+      <div class="col-4 col-sm-5">
+      </div> 
+      <div id="selectDiv" class="col-8 col-sm-7">
+        <select id="countrySelection"><option>Afeganistan</option></select>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-2 col-sm-1" id="btnCol">
+
+        <div class="row mt-2"><button class="btn" id="infoBtn"><img class="img-fluid figure" src="img/infoBtnIco.ico"></button></div>
+        <div class="row mt-1"><button class="btn" id="covidBtn"><img class="img-fluid figure" src="img/covidBtnImg2.png"></button></div>
+        <div class="row mt-1"><button class="btn" id="HDIBtn"><img class="img-fluid figure" src="img/lifeQualityIcon.ico"></button></div>
+        <div class="row mt-1"><button class="btn" id="weatherBtn"><img class="img-fluid figure" src="img/weatherIcon2.ico"></button></div>
+
+      </div> 
+
+       <div class="col-10 col-sm-6 col-lg-4 col-xl-3 mt-3 table-responsive" id="tableCol">
+        
+        
+
+      </div>
+    </div>
+    
+  </div>`;
+createDiv('topLeftDiv', 'container-fluid', 'topleft', topLeftDivHTML);
+
+//setting up the content of the right bottom div:
+var bottomRightDivHTML = `
+  <div class="row">
+
+    <div class="col-6">
+      
+    </div>
+    
+    <div class="col-6">
+      <button class="btn" id="myLocationBtn"><img class="img-fluid" id="locationImg" id="locationImg" src="img/locationIcon.ico"></button>
+    </div>
+
+  </div>  
+`;
+createDiv('bottomRightDiv', 'container-fluid', 'bottomright', bottomRightDivHTML);
+
+//INSERTION OF DIV ELEMENTS TO THE MAP END:
+
+//INFORMATION TABLE fUNCTIONS BEGINS:
+const generalDataTableUpdate = function() {
+  $('#tableCol')[0].innerHTML = `
+        <table class="table  table-sm table-striped table-hover table-light" id="infoTable">
+          <thead>
+            <tr>
+              <th colspan="2"><img id="flagImg" class="img-fluid" src="${country.flagPath}">  ${country.name}</th>
+              
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><img class="img-fluid" src="img/capitalIcon.ico"></td>
+              
+              <td>${country.capital}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/populationIcon.ico"></td>
+              
+              <td>${country.population}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/languageIcon.ico"></td>
+              
+              <td id="languagesCell"></td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/currencyIcon.ico"></td>
+              
+              <td>${country.currency.code}(${country.currency.name})</td>      
+            <tr>
+              <td><img class="img-fluid" src="img/exchange.ico"></td>
+              
+              <td>1 USD = ${country.currency.exchangeUSD} ${country.currency.code}</td>      
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/union.ico"></td>
+              
+              <td>${country.regionalBlock.name}</td>      
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/callCode.ico"></td>
+              
+              <td>+${country.callingCode}</td>      
+            </tr>
+          </tbody>
+        </table>
+`;
+  
+    country.languages.forEach(language => {
+    $('#languagesCell')[0].insertAdjacentHTML('beforeend', language.name + ", ");
+    });
+}
+//INFORMATION TABLE FUNCTIONS END:
+
 
 //EVENT HANDLERS BEGIN
 //adding an event listener to the click event at the country selection box to stop propagation of map click events:
-$("#countryOptions").click(function(e) {
+$("#countrySelection").click(function(e) {
   e.stopPropagation();
 });
-//adding an event listener to the change event of the country selection to updated the selected country:
-$("#countryOptions").change(function(e) {
-  ajaxCountryBorders($('#countryOptions').val());
+//adding an event listener to the change event of the country selection:
+$("#countrySelection").change(function(e) {
+  ajaxCountryBorders($('#countrySelection').val());
 });
 
-//adding an event listener to the mylocationBtn takes the user back to the country his is in:
+//adding an event listener to the mylocationBtn:
 $('#myLocationBtn').click(function() {
   if (country.code.iso3 != userISO3) {
     ajaxOpenCageUser(userLat, userLng);
   } else {
     alert('Already showing information about the country you are currently in!');
   }
+  event.stopPropagation();
+});
+//adding an event listener to the infoBtn:
+$('#infoBtn').click(function() {
+  
+  if (infoTableStatus != "general data") {
+    generalDataTableUpdate();
+    infoTableStatus = "general data";
+    $('#tableCol').show();
+    //avoiding bubling events on the table:
+  $('#infoTable').click(function() {
+    event.stopPropagation();
+    });
+  } else {
+    $('#tableCol').toggle();
+  }
+  event.stopPropagation();
+});
+//adding an event listener to the covidBtn:
+$('#covidBtn').click(function() {
+  alert('covid button clicked');
+  infoTableStatus = "covid data";
+  event.stopPropagation();
+});
+//adding an event listener to the HDI btn:
+$('#HDIBtn').click(function() {
+  alert('hdi button clicked');
+  event.stopPropagation();
+});
+//adding an event listener to the weather Btn:
+$('#weatherBtn').click(function() {
+  alert('weather button clicked');
+  event.stopPropagation();
 });
 
-//adding an event listener to the Covid btn that will display the info table:
-$('#covidBtn').click(function() {
-  $('#covidTableDiv').toggle();
-  event.stopPropagation();
-}); 
+
 
 //defining the popup generator funtion that will display the click event place informatiom:
 /*const popupGenerator = function(lat, lng) {

@@ -1,25 +1,96 @@
 #mapId {
   height: 100vh;
+}
+
+.leaflet-left {
   width: 100%;
 }
 
-.leaflet-top {
-  width: 100%;
-}
-
-#topLeftDiv {
-  width: 100%;
-}
-
-[class*="col"] {
+/*[class*="con"] {
+  background-color: blue; 
+}*/
+.btn {
+  background-color: grey;
+  position: relative;
+  width: 40px;
+  padding: 5px;
+  border-radius: 10px;
   
 }
 
-#countryOptions {
-  width: 8rem;
-  font-size: 120%;
+img{
+  /*background-color: green;*/
 }
 
-#covidTableDiv {
-  display: none;
+/*[class*="col"] {
+  background-color: red;
+  border: solid 2px gray;
+}*/
+/*.row {
+  
+  background-color: aqua;
+  border: 2px solid black;
+}*/
+
+#countrySelection {
+  position: relative;
+  bottom: 10px;
+  font-size: 120%;
+  width: 150px;
+  height: 20px;
+}
+
+
+
+#topLeftDiv {
+  position: relative;
+  right: 10px;
+  width: 100%;
+}
+
+#bottomRightDiv {
+  /*background-color: navy;*/
+  right: 25px;
+  top: 80px;
+  width: 130px;
+  height: 50px;
+}
+
+#flagImg {
+  height: 60px;
+  width: 70px;
+}
+
+
+#tableCol {
+ display: none;
+}
+
+#infoTable  {
+  text-align: left;
+  font-weight: bold;
+}
+
+#infoTable td {
+  font-size: 130%;
+  color: #0d335d;
+}
+
+#infoTable th  {
+  font-size: 200%;
+  background-color: darkgray;
+  color: white;
+  text-align: center;
+}
+
+@media screen and (max-height: 400px)  {
+  #tableCol {
+    height: 290px;
+}
+}
+
+@media screen and (max-height: 300px)  {
+  #tableCol {
+    height: 200px;
+}
 }
