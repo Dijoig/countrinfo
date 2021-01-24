@@ -213,25 +213,41 @@ const ajaxCovid19 = function(iso3) {
     dataType: 'json',
     success: function(result) {
       //console.log(result)
-      if (result.length > 0) {
+      country.covidData = {};
       var latestData = result[result.length - 1];
-      country.covidData = {
+      var subtractionData = result[result.length - 2];
+      if (result.length > 0) {
+      country.covidData.total = {
         date: latestData['Date'],
         confirmed: latestData['Confirmed'],
         active: latestData['Active'],
         deaths: latestData['Deaths'],
         recovered: latestData['Recovered']
         }
+        country.covidData.yesterday = {
+          confirmed: latestData['Confirmed'] - subtractionData['Confirmed'],
+          deaths: latestData['Deaths'] - subtractionData['Deaths'],
+          recovered: latestData['Recovered'] - subtractionData['Recovered'],
+          active: subtractionData['Active']
+        }
       } else {
-        country.covidData = {
+        country.covidData.total = {
         date: 'not available',
         confirmed: 'not available',
         active: 'not available',
         deaths: 'not available',
         recovered: 'not available'
       }
+        country.covidData.yesterday = {
+          confirmed: 'not available',
+          deaths: 'not available',
+          recovered: 'not available',
+          active: 'not available'
+        }
       }
-      //covid19Data();
+      if (infoTableStatus == "covid data") {
+        covidDataTableUpdate();
+      }
     },
     error: function(error) {
       console.log(error);
@@ -534,7 +550,9 @@ createDiv('bottomRightDiv', 'container-fluid', 'bottomright', bottomRightDivHTML
 
 //INSERTION OF DIV ELEMENTS TO THE MAP END:
 
+
 //INFORMATION TABLE fUNCTIONS BEGINS:
+
 const generalDataTableUpdate = function() {
   $('#tableCol')[0].innerHTML = `
         <table class="table  table-sm table-striped table-hover table-light" id="infoTable">
@@ -547,36 +565,29 @@ const generalDataTableUpdate = function() {
           <tbody>
             <tr>
               <td><img class="img-fluid" src="img/capitalIcon.ico"></td>
-              
               <td>${country.capital}</td>     
             </tr>
             <tr>
               <td><img class="img-fluid" src="img/populationIcon.ico"></td>
-              
               <td>${country.population}</td>     
             </tr>
             <tr>
               <td><img class="img-fluid" src="img/languageIcon.ico"></td>
-              
               <td id="languagesCell"></td>     
             </tr>
             <tr>
               <td><img class="img-fluid" src="img/currencyIcon.ico"></td>
-              
               <td>${country.currency.code}(${country.currency.name})</td>      
             <tr>
               <td><img class="img-fluid" src="img/exchange.ico"></td>
-              
               <td>1 USD = ${country.currency.exchangeUSD} ${country.currency.code}</td>      
             </tr>
             <tr>
               <td><img class="img-fluid" src="img/union.ico"></td>
-              
               <td>${country.regionalBlock.name}</td>      
             </tr>
             <tr>
               <td><img class="img-fluid" src="img/callCode.ico"></td>
-              
               <td>+${country.callingCode}</td>      
             </tr>
           </tbody>
@@ -587,14 +598,66 @@ const generalDataTableUpdate = function() {
     $('#languagesCell')[0].insertAdjacentHTML('beforeend', language.name + ", ");
     });
 }
+
+const covidDataTableUpdate = function() {
+  $('#tableCol')[0].innerHTML = `
+        <table class="table  table-sm table-striped table-hover table-info" id="covidTable">
+          <thead>
+            <tr>
+              <th colspan="3"><img class="img-fluid" id="flagImg" src="${country.flagPath}">  ${country.name} Covid Statics</th>
+            </tr>
+            <tr>
+              <th><img class="img-fluid" src="img/covid.ico"></th>
+              <th>Yesterday</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><img class="img-fluid" src="img/cases.ico"> Cases</td>
+              <td>${country.covidData.yesterday.confirmed}</td>
+              <td>${country.covidData.total.confirmed}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/death.ico"> Deaths</td>
+              <td>${country.covidData.yesterday.deaths}</td>
+              <td>${country.covidData.total.deaths}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/injection.ico"> Healed</td>
+              <td>${country.covidData.yesterday.recovered}</td>
+              <td>${country.covidData.total.recovered}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/active.ico"> Active</td>
+              <td>${country.covidData.yesterday.active}</td>
+              <td>${country.covidData.total.active}</td>
+            </tr>
+          </tbody>
+          </table>
+`;
+  
+}
 //INFORMATION TABLE FUNCTIONS END:
 
 
 //EVENT HANDLERS BEGIN
+
+//function to remove double click event propagation from buttons (to stop the doubleclick zoom on these elements):
+const removeDblclickPropagation = function(elementList) {
+  elementList.forEach(element => {
+    element.dblclick(function() {
+      event.stopPropagation();
+    });
+  });
+}
+removeDblclickPropagation([$("#countrySelection"), $('#myLocationBtn'), $('#infoBtn'), $('#covidBtn'), $('#HDIBtn'), $('#weatherBtn')]);
+
 //adding an event listener to the click event at the country selection box to stop propagation of map click events:
 $("#countrySelection").click(function(e) {
   e.stopPropagation();
 });
+
 //adding an event listener to the change event of the country selection:
 $("#countrySelection").change(function(e) {
   ajaxCountryBorders($('#countrySelection').val());
@@ -609,9 +672,9 @@ $('#myLocationBtn').click(function() {
   }
   event.stopPropagation();
 });
-//adding an event listener to the infoBtn:
-$('#infoBtn').click(function() {
-  
+
+//adding event listener to infoBtn:
+$('#infoBtn').click(function() { 
   if (infoTableStatus != "general data") {
     generalDataTableUpdate();
     infoTableStatus = "general data";
@@ -625,17 +688,28 @@ $('#infoBtn').click(function() {
   }
   event.stopPropagation();
 });
+
 //adding an event listener to the covidBtn:
 $('#covidBtn').click(function() {
-  alert('covid button clicked');
-  infoTableStatus = "covid data";
+  if (infoTableStatus != "covid data") {
+    covidDataTableUpdate();
+    infoTableStatus = "covid data";
+    $('#tableCol').show();
+    $('#covidTable').click(function() {
+      event.stopPropagation();
+    });
+  } else {
+    $('#tableCol').toggle();
+  }
   event.stopPropagation();
 });
+
 //adding an event listener to the HDI btn:
 $('#HDIBtn').click(function() {
   alert('hdi button clicked');
   event.stopPropagation();
 });
+
 //adding an event listener to the weather Btn:
 $('#weatherBtn').click(function() {
   alert('weather button clicked');
@@ -669,6 +743,7 @@ const onMapClick = function(e) {
  }
 worldMap.on('click', onMapClick);
 //EVENT HANDLERS END
+
 
 //Test functions
 /*var i = 0;
