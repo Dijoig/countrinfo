@@ -57,14 +57,14 @@
 }
 
 #infoTable th  {
-  font-size: 200%;
+  font-size: 160%;
   background-color: darkgray;
   color: white;
-  text-align: center;
+  text-align: left;
 }
 
 #covidTable {
-  text-align: center;
+  text-align: left;
   font-weight: 550;
 }
 
@@ -75,20 +75,37 @@
 
 #covidTable th {
   font-size: 140%;
-  background-color: turquoise;
+  background-color: skyblue;
   color: white;
-  text-align: center;
+  text-align: left;
+}
+
+#hdiTable {
+  text-align: left;
+  font-weight: 550;
+}
+
+#hdiTable td {
+  font-size: 120%;
+  color: dimgray;
+}
+
+#hdiTable th {
+  font-size: 140%;
+  background-color: coral;
+  color: white;
+  text-align: left;
 }
 
 
 @media screen and (max-height: 400px)  {
   #tableCol {
     height: 290px;
-}
+  }
 }
 
 @media screen and (max-height: 300px)  {
   #tableCol {
     height: 200px;
-}
+  }
 }

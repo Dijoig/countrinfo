@@ -112,13 +112,11 @@ const ajaxRestCountries = function(countryName) {
       }
       
       //calling the APIs:
+      ajaxGeonameId(country.code.iso2);
       ajaxCovid19(country.code.iso3);
       //ajaxOpenExchangeRate(country.currency.code);
       ajaxHDI(country.code.iso3);
       ajaxOpenWeatherCapital(country.capital);
-      //generalData();
-      //wikipediaLink();
-      
       
     },
     error: function(error) {
@@ -197,7 +195,12 @@ const ajaxOpenWeatherCapital = function(city) {
     data: {city: city},
     success: function(result) {
       //console.log(result);
-      var markerCity = L.marker([result['data']['lat'], result['data']['lon']]).addTo(worldMap);
+        var capitalIcon = L.icon({
+          iconUrl: 'img/capital.ico',
+          iconSize: [30, 30],
+          iconAnchor: [15, 0]
+});
+      var markerCity = L.marker([result['data']['lat'], result['data']['lon']], {icon: capitalIcon}).addTo(worldMap);
     },
     error: function(error) {
       console.log(error);
@@ -288,7 +291,9 @@ const ajaxHDI = function(iso3) {
           hdiRank: "not available"
         }
       }
-      //lifeQualityData();
+      if (infoTableStatus == "hdi data") {
+        hdiDataTableUpdate();
+      }
     }
     ,
     error: function(error) {
@@ -347,6 +352,46 @@ const ajaxOpenCageUser = function(userLat, userLng) {
       });
 }
 
+//defining function that will make the ajax request to the php routine to get the geonameID from geonames API and call ajaxGeonameChildren using the geonameId:
+const ajaxGeonameId = function(iso2) {
+  $.ajax({
+           url: './php/geonameId.php',
+          type: 'POST',
+          dataType: 'json',
+          data: {countryCode: iso2},
+          success: function(result) {
+            //console.log(result);
+            var geoname = result['data'][0];
+            country.areaKm = geoname['areaInSqKm'];
+            country.geonameId = geoname['geonameId'];
+            
+            ajaxGeonameIdChildren(country.geonameId);
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
+}
+
+//defining function that will make the ajax request to the php routine and get the children of a geonameId using geoname API and add markers in the map:
+const ajaxGeonameIdChildren = function(geonameId) {
+  $.ajax({
+           url: './php/geonameChildren.php',
+          type: 'POST',
+          dataType: 'json',
+          data: {geonameId: geonameId},
+          success: function(result) {
+            console.log(result);
+            result['data'].forEach(geoname => {
+             let marker = L.marker([geoname.lat, geoname.lng]).addTo(worldMap);
+              marker.clearLayers();
+            });
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
+}
 //defining the function that will make the ajax request to the php routine handling the country borders and call ajaxRestCountries:
 const ajaxCountryBorders = function(iso3) {
   $.ajax({
@@ -392,6 +437,7 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 }).addTo(worldMap);
 //MAP SETUP ENDS
 
+
 //DOCUMENT READY EVENT BEGINS
 //declaring onready code that will get user position and make ajax request to the opencage reverse API, using the location of the user:
 $('document').ready(function() {
@@ -415,76 +461,6 @@ $('document').ready(function() {
 //DOCUMENT READY EVENT ENDS
 
 
- 
-
-
-  
- 
-//function to add weather data overlaid to the map:
-/*const weatherUpdate = function() {
-  var d = new Date();
-  var todayMiliseconds = d.getTime();
-  var day1 = new Date(todayMiliseconds);
-  var day2 = new Date(todayMiliseconds + 86400000);
-  var day3 = new Date(todayMiliseconds + 86400000*2);
-  var day4 = new Date(todayMiliseconds + 86400000*3);
-  weatherDataHTML = 
-    `<table id="weatherTable">
-      <tr>
-        <th></th>
-        <th>${day1.toDateString()}</th>
-        <th>${day2.toDateString()}</th>
-        <th>${day3.toDateString()}</th>
-        <th>${day4.toDateString()}</th>
-      </tr>
-      <tr>
-        <th>Avg temp</th>
-        <td>${weather[0].tempAvg}°C</td>
-        <td>${weather[1].tempAvg}°C</td>
-        <td>${weather[2].tempAvg}°C</td>
-        <td>${weather[3].tempAvg}°C</td>
-      </tr>
-      <tr>
-        <th>Max temp</th>
-        <td>${weather[0].tempMax}°C</td>
-        <td>${weather[1].tempMax}°C</td>
-        <td>${weather[2].tempMax}°C</td>
-        <td>${weather[3].tempMax}°C</td>
-      </tr>
-      <tr>
-        <th>Min temp</th>
-        <td>${weather[0].tempMin}°C</td>
-        <td>${weather[1].tempMin}°C</td>
-        <td>${weather[2].tempMin}°C</td>
-        <td>${weather[3].tempMin}°C</td>
-      </tr>
-      <tr>
-        <th>Wind</th>
-        <td>${weather[0].wind}km/h</td>
-        <td>${weather[1].wind}km/h</td>
-        <td>${weather[2].wind}km/h</td>
-        <td>${weather[3].wind}km/h</td>
-      </tr>
-      <tr>
-        <th>Sky</th>
-        <td>${weather[0].sky}</td>
-        <td>${weather[1].sky}</td>
-        <td>${weather[2].sky}</td>
-        <td>${weather[3].sky}</td>
-      </tr>
-      <tr>
-        <th>Humidity</th>
-        <td>${weather[0].humidity}%</td>
-        <td>${weather[1].humidity}%</td>
-        <td>${weather[2].humidity}%</td>
-        <td>${weather[3].humidity}%</td>
-      </tr>
-     </table>
-     <p>Currently: ${weather.currentTemp}°C (feels like ${weather.currentFeelsLike}°C)</p>`
-  
-  $('#weatherDiv')[0].innerHTML = weatherDataHTML;
-  
-}*/
 
 //INSERTION OF DIV ELEMENTS TO THE MAP BEGIN:
 //defining function to create a div element on the map:
@@ -564,7 +540,7 @@ const generalDataTableUpdate = function() {
           </thead>
           <tbody>
             <tr>
-              <td><img class="img-fluid" src="img/capitalIcon.ico"></td>
+              <td><img class="img-fluid" src="img/capital.ico"></td>
               <td>${country.capital}</td>     
             </tr>
             <tr>
@@ -616,15 +592,15 @@ const covidDataTableUpdate = function() {
             <tr>
               <td><img class="img-fluid" src="img/cases.ico"> Cases</td>
               <td>${country.covidData.yesterday.confirmed}</td>
-              <td>${country.covidData.total.confirmed}</td>     
+              <td>${country.covidData.total.confirmed}</td>
             </tr>
             <tr>
               <td><img class="img-fluid" src="img/death.ico"> Deaths</td>
               <td>${country.covidData.yesterday.deaths}</td>
-              <td>${country.covidData.total.deaths}</td>     
+              <td>${country.covidData.total.deaths}</td>  
             </tr>
             <tr>
-              <td><img class="img-fluid" src="img/injection.ico"> Healed</td>
+              <td><img class="img-fluid" src="img/injection.ico"> Cured</td>
               <td>${country.covidData.yesterday.recovered}</td>
               <td>${country.covidData.total.recovered}</td>     
             </tr>
@@ -637,6 +613,45 @@ const covidDataTableUpdate = function() {
           </table>
 `;
   
+}
+
+const hdiDataTableUpdate = function() {
+  $('#tableCol')[0].innerHTML = `
+        <table class="table  table-sm table-striped table-hover table-info" id="hdiTable">
+          <thead>
+            <tr>
+              <th colspan="3"><img class="img-fluid" id="flagImg" src="${country.flagPath}"> ${country.name} Life Quality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><img class="img-fluid" src="img/hdiValue.ico"></td>
+              <td>HDI value</td>
+              <td>${country.humanDevelopmentData.hdiValue}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/ladder.ico"></td>
+              <td>HDI rank</td>
+              <td>${country.humanDevelopmentData.hdiRank}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/gniCapita.ico"></td>
+              <td>GNI/capita (USD)</td>
+              <td>${country.humanDevelopmentData.gniPerCapita}</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/jobs.ico"></td>
+              <td>Unemployment</td>
+              <td>${country.humanDevelopmentData.totalUnemploymentRate}%</td>     
+            </tr>
+            <tr>
+              <td><img class="img-fluid" src="img/life.ico"></td>
+              <td>Life Expctancy</td>
+              <td>${country.humanDevelopmentData.lifeExpectancyAtBirth}</td>     
+            </tr>
+          </tbody>
+          </table>
+`;
 }
 //INFORMATION TABLE FUNCTIONS END:
 
@@ -706,7 +721,16 @@ $('#covidBtn').click(function() {
 
 //adding an event listener to the HDI btn:
 $('#HDIBtn').click(function() {
-  alert('hdi button clicked');
+  if (infoTableStatus != "hdi data") {
+    hdiDataTableUpdate();
+    infoTableStatus = "hdi data";
+    $('#tableCol').show();
+    $('#hdiTable').click(function() {
+      event.stopPropagation();
+    });
+  } else {
+    $('#tableCol').toggle();
+  }
   event.stopPropagation();
 });
 
