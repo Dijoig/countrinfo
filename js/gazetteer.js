@@ -1,5 +1,5 @@
 //defining global variables:
-var feature;
+var geoJsonLayer;
 var userLat;
 var userLng;
 var userISO3;
@@ -200,7 +200,8 @@ const ajaxOpenWeatherCapital = function(city) {
           iconSize: [30, 30],
           iconAnchor: [15, 0]
 });
-      var markerCity = L.marker([result['data']['lat'], result['data']['lon']], {icon: capitalIcon}).addTo(worldMap);
+      var markerCity = L.marker([result['data']['lat'], result['data']['lon']], {icon: capitalIcon}).addTo(geoJsonLayer);
+      markerCity.bindPopup(`${country.capital}`);
     },
     error: function(error) {
       console.log(error);
@@ -376,15 +377,52 @@ const ajaxGeonameId = function(iso2) {
 //defining function that will make the ajax request to the php routine and get the children of a geonameId using geoname API and add markers in the map:
 const ajaxGeonameIdChildren = function(geonameId) {
   $.ajax({
-           url: './php/geonameChildren.php',
+          url: './php/geonameChildren.php',
           type: 'POST',
           dataType: 'json',
           data: {geonameId: geonameId},
           success: function(result) {
             console.log(result);
+            var outerCluster = L.markerClusterGroup();
             result['data'].forEach(geoname => {
-             let marker = L.marker([geoname.lat, geoname.lng]).addTo(worldMap);
-              marker.clearLayers();
+              var stateIcon = L.icon({
+                iconUrl: 'img/state.ico',
+                iconSize: [30, 30],
+                iconAnchor: [15, 0]
+            });
+              let marker = L.marker([geoname.lat, geoname.lng], {icon: stateIcon}).addTo(outerCluster);
+              marker.bindPopup(`${geoname.name}`);
+              marker.on('click', function() {
+                var innerCluster = L.markerClusterGroup();
+                ajaxGeonameIdChildrenOfChildren(geoname.geonameId, innerCluster);
+                geoJsonLayer.addLayer(innerCluster);
+              });
+            });
+            geoJsonLayer.addLayer(outerCluster);
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
+}
+
+//defining function that will be called inside ajaxGeonameIdChildren to loop thorugh the administrative children of the country and get markers for each of thei own adnistrative children:
+const ajaxGeonameIdChildrenOfChildren = function(geonameId, markerCluster) {
+  $.ajax({
+          url: './php/geonameChildren.php',
+          type: 'POST',
+          dataType: 'json',
+          data: {geonameId: geonameId},
+          success: function(result) {
+            //console.log(result);
+            result['data'].forEach(geoname => {
+              var townIcon = L.icon({
+                iconUrl: 'img/town2.ico',
+                iconSize: [20, 20],
+                iconAnchor: [15, 0]
+            });
+             let marker = L.marker([geoname.lat, geoname.lng], {icon: townIcon}).addTo(markerCluster);
+              marker.bindPopup(`${geoname.name}`);
             });
           },
           error: function(error) {
@@ -400,8 +438,8 @@ const ajaxCountryBorders = function(iso3) {
           dataType: 'json',
           data: {countryCode: iso3},
           success: function(result) {
-            if (feature) {
-              feature.clearLayers();
+            if (geoJsonLayer) {
+              geoJsonLayer.clearLayers();
             }
             //console.log(result);
           
@@ -409,8 +447,9 @@ const ajaxCountryBorders = function(iso3) {
             country.name = result['properties']['name'];
             
             var myStyle = {"color": "#2D5EF9", "weight": 4, "opacity": 0.5};
-            feature = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
-            worldMap.fitBounds(feature.getBounds());
+            geoJsonLayer = L.geoJSON(result, {style: myStyle}).addTo(worldMap);
+            worldMap.fitBounds(geoJsonLayer.getBounds());
+            
             
             //ajaxOpenCage(countryName);
             ajaxRestCountries(isoCode);
@@ -767,6 +806,7 @@ const onMapClick = function(e) {
  }
 worldMap.on('click', onMapClick);
 //EVENT HANDLERS END
+
 
 
 //Test functions
