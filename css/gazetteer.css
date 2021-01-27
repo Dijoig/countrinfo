@@ -7,9 +7,28 @@
 }
 
 #topLeftDiv {
-  position: relative;
-  right: 10px;
   width: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
+#selectionRow {
+  position:relative;
+  bottom: 5px;
+}
+
+#btnRow {
+  
+}
+
+#btnCol {
+  position:relative;
+  left: 5px;
+ 
+}
+
+#tableCol {
+
 }
 
 #bottomRightDiv {
@@ -26,12 +45,16 @@
   width: 40px;
   padding: 5px;
   border-radius: 10px;
-  
+}
+
+#countryWikiBtn {
+  width: 30px;
+  height: 30px;
+  padding: 2px;
 }
 
 #countrySelection {
   position: relative;
-  bottom: 10px;
   font-size: 120%;
   width: 150px;
   height: 20px;
@@ -107,5 +130,11 @@
 @media screen and (max-height: 300px)  {
   #tableCol {
     height: 200px;
+  }
+}
+
+@media screen and (max-width: 300px)  {
+  #tableCol {
+    font-size: 80%;
   }
 }

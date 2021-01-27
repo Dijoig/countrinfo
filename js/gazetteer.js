@@ -374,7 +374,7 @@ const ajaxGeonameId = function(iso2) {
         });
 }
 
-//defining function that will make the ajax request to the php routine and get the children of a geonameId using geoname API and add markers in the map:
+//defining function that will make the ajax request to the php routine and get the subregion of a geonameId using geoname API and add markers in the map:
 const ajaxGeonameIdChildren = function(geonameId) {
   $.ajax({
           url: './php/geonameChildren.php',
@@ -392,12 +392,18 @@ const ajaxGeonameIdChildren = function(geonameId) {
             });
               let marker = L.marker([geoname.lat, geoname.lng], {icon: stateIcon}).addTo(outerCluster);
               marker.bindPopup(`${geoname.name}`);
+              //adding event listener to the marker that will generate the cluster markers of it's children:
               marker.on('click', function() {
+                worldMap.flyTo([geoname.lat, geoname.lng]);
+                if (this.clicked != true) {
                 var innerCluster = L.markerClusterGroup();
                 ajaxGeonameIdChildrenOfChildren(geoname.geonameId, innerCluster);
                 geoJsonLayer.addLayer(innerCluster);
+                this.clicked = true;
+                }
               });
             });
+            
             geoJsonLayer.addLayer(outerCluster);
           },
           error: function(error) {
@@ -406,7 +412,7 @@ const ajaxGeonameIdChildren = function(geonameId) {
         });
 }
 
-//defining function that will be called inside ajaxGeonameIdChildren to loop thorugh the administrative children of the country and get markers for each of thei own adnistrative children:
+//defining function that will be called inside ajaxGeonameIdChildren to loop thorugh the subregion of the country and get markers for each of their own subregion:
 const ajaxGeonameIdChildrenOfChildren = function(geonameId, markerCluster) {
   $.ajax({
           url: './php/geonameChildren.php',
@@ -508,7 +514,7 @@ L.Control.textbox = L.Control.extend({
 		onAdd: function(map) {
       var div = L.DomUtil.create('div');
       div.id = idName;
-      div.class = className;
+      div.className = className;
       div.innerHTML = HTML;
       return div;
 		}
@@ -517,35 +523,33 @@ const newDiv = function(opts) { return new L.Control.textbox(opts);}
 newDiv({ position: position}).addTo(worldMap);
 }
 //seeting up the content of the top left div:
-var topLeftDivHTML = `<div class="container-fluid">
+var topLeftDivHTML = `
     
-    <div class="row">
+    <div class="row" id="selectionRow">
       <div class="col-4 col-sm-5">
       </div> 
       <div id="selectDiv" class="col-8 col-sm-7">
-        <select id="countrySelection"><option>Afeganistan</option></select>
+        <select class="leaflet-control" id="countrySelection"><option>Afeganistan</option></select>
       </div>
     </div>
     
-    <div class="row">
-      <div class="col-2 col-sm-1" id="btnCol">
+    <div class="row" id="btnRow">
+      <div class="col-2 col-sm-1 leaflet-control" id="btnCol">
 
-        <div class="row mt-2"><button class="btn" id="infoBtn"><img class="img-fluid figure" src="img/infoBtnIco.ico"></button></div>
+        <div class="row mt-1"><button class="btn" id="infoBtn"><img class="img-fluid figure" src="img/infoBtnIco.ico"></button></div>
         <div class="row mt-1"><button class="btn" id="covidBtn"><img class="img-fluid figure" src="img/covidBtnImg2.png"></button></div>
         <div class="row mt-1"><button class="btn" id="HDIBtn"><img class="img-fluid figure" src="img/lifeQualityIcon.ico"></button></div>
         <div class="row mt-1"><button class="btn" id="weatherBtn"><img class="img-fluid figure" src="img/weatherIcon2.ico"></button></div>
 
       </div> 
 
-       <div class="col-10 col-sm-6 col-lg-4 col-xl-3 mt-3 table-responsive" id="tableCol">
+       <div class="col-9 col-sm-6 col-lg-4 col-xl-3 table-responsive" id="tableCol">
         
-        
-
       </div>
     </div>
-    
-  </div>`;
+  `;
 createDiv('topLeftDiv', 'container-fluid', 'topleft', topLeftDivHTML);
+$('#topLeftDiv').removeClass('leaflet-control');
 
 //setting up the content of the right bottom div:
 var bottomRightDivHTML = `
@@ -570,10 +574,10 @@ createDiv('bottomRightDiv', 'container-fluid', 'bottomright', bottomRightDivHTML
 
 const generalDataTableUpdate = function() {
   $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-light" id="infoTable">
+        <table class="table  table-sm table-striped table-hover table-light leaflet-control" id="infoTable">
           <thead>
             <tr>
-              <th colspan="2"><img id="flagImg" class="img-fluid" src="${country.flagPath}">  ${country.name}</th>
+              <th colspan="2"><img id="flagImg" class="img-fluid" src="${country.flagPath}">  ${country.name}<a href="https://www.wikipedia.org/wiki/${country.fullName.replace(' ', '_')}" class="btn" id="countryWikiBtn" target="_blank"><img class="img-fluid figure" src="img/wiki.ico"></a></th>
               
             </tr>
           </thead>
@@ -616,7 +620,7 @@ const generalDataTableUpdate = function() {
 
 const covidDataTableUpdate = function() {
   $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-info" id="covidTable">
+        <table class="table  table-sm table-striped table-hover table-info leaflet-control" id="covidTable">
           <thead>
             <tr>
               <th colspan="3"><img class="img-fluid" id="flagImg" src="${country.flagPath}">  ${country.name} Covid Statics</th>
@@ -656,7 +660,7 @@ const covidDataTableUpdate = function() {
 
 const hdiDataTableUpdate = function() {
   $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-info" id="hdiTable">
+        <table class="table  table-sm table-striped table-hover table-info leaflet-control" id="hdiTable">
           <thead>
             <tr>
               <th colspan="3"><img class="img-fluid" id="flagImg" src="${country.flagPath}"> ${country.name} Life Quality</th>
@@ -698,19 +702,17 @@ const hdiDataTableUpdate = function() {
 //EVENT HANDLERS BEGIN
 
 //function to remove double click event propagation from buttons (to stop the doubleclick zoom on these elements):
-const removeDblclickPropagation = function(elementList) {
+const removeEventPropagation = function(elementList, e) {
   elementList.forEach(element => {
-    element.dblclick(function() {
+    element.on(e, function() {
       event.stopPropagation();
     });
   });
 }
-removeDblclickPropagation([$("#countrySelection"), $('#myLocationBtn'), $('#infoBtn'), $('#covidBtn'), $('#HDIBtn'), $('#weatherBtn')]);
+removeEventPropagation([$("#countrySelection"), $('#myLocationBtn'), $('#infoBtn'), $('#covidBtn'), $('#HDIBtn'), $('#weatherBtn')], 'dblclick');
 
 //adding an event listener to the click event at the country selection box to stop propagation of map click events:
-$("#countrySelection").click(function(e) {
-  e.stopPropagation();
-});
+removeEventPropagation([$('#countrySelection')], 'click');
 
 //adding an event listener to the change event of the country selection:
 $("#countrySelection").change(function(e) {
@@ -733,10 +735,8 @@ $('#infoBtn').click(function() {
     generalDataTableUpdate();
     infoTableStatus = "general data";
     $('#tableCol').show();
-    //avoiding bubling events on the table:
-  $('#infoTable').click(function() {
-    event.stopPropagation();
-    });
+    //avoiding bubling events on elements:
+  removeEventPropagation([$('#countryWikiBtn'), $('#infoTable')], 'click');
   } else {
     $('#tableCol').toggle();
   }
@@ -749,9 +749,7 @@ $('#covidBtn').click(function() {
     covidDataTableUpdate();
     infoTableStatus = "covid data";
     $('#tableCol').show();
-    $('#covidTable').click(function() {
-      event.stopPropagation();
-    });
+    removeEventPropagation([$('#covidTable')], 'click');
   } else {
     $('#tableCol').toggle();
   }
@@ -764,9 +762,7 @@ $('#HDIBtn').click(function() {
     hdiDataTableUpdate();
     infoTableStatus = "hdi data";
     $('#tableCol').show();
-    $('#hdiTable').click(function() {
-      event.stopPropagation();
-    });
+    removeEventPropagation([$('#hdiTable')], 'click');
   } else {
     $('#tableCol').toggle();
   }
@@ -779,29 +775,15 @@ $('#weatherBtn').click(function() {
   event.stopPropagation();
 });
 
-
-
-//defining the popup generator funtion that will display the click event place informatiom:
-/*const popupGenerator = function(lat, lng) {
-  let popup = L.popup();
-  popup
-    .setLatLng({lat: lat, lng: lng})
-    .setContent(`Coordinates: ${lat.toFixed(4)}(lat), ${lng.toFixed(4)}(lng)<br>
-                 Location: ${place.formatted}<br>
-                 TimeZone: ${place.timeZone}<br>
-                 `)
-    .openOn(worldMap);
-};*/
  
 //defining onMap click event to get weather and address data from the click:
 const onMapClick = function(e) {
-  ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
+  //ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
   ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
   setTimeout(function() {
     if (clickISO3 != country.code.iso3) {
     ajaxCountryBorders(clickISO3);
-  }
-    //popupGenerator(e.latlng.lat, e.latlng.lng);
+    }
   }, 600);
  }
 worldMap.on('click', onMapClick);
