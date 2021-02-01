@@ -2,7 +2,7 @@
 
 $executionStartTime = microtime(true) / 1000;
 
-$url = 'http://api.geonames.org/childrenJSON?geonameId=' . $_REQUEST['geonameId'] . '&username=felipedesenco&hierarchy=tourism';
+$url = 'http://api.geonames.org/wikipediaBoundingBoxJSON?north=' . $_REQUEST['boundingBox']['north'] . '&south=' . $_REQUEST['boundingBox']['south'] . '&east=' . $_REQUEST['boundingBox']['east'] . '&west=' . $_REQUEST['boundingBox']['west'] . '&username=felipedesenco&maxRows=90';
 
 
 $ch = curl_init();
