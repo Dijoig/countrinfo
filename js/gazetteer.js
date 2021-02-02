@@ -6,6 +6,8 @@ var userLng;
 var userISO3;
 var clickISO3;
 var infoTableStatus;
+var weatherBtnStatus = false;
+var wikiCluster = L.markerClusterGroup();
 
 
 //country obj that will store data from the selected country:
@@ -366,10 +368,11 @@ const ajaxGeonameId = function(iso2) {
             var geoname = result['data'][0];
             country.areaKm = geoname['areaInSqKm'];
             country.geonameId = geoname['geonameId'];
-            country.boundingBox = {north: geoname['north'], south: geoname['south'], east: geoname['east'], west: geoname['west']};
+            /*country.boundingBox = {north: geoname['north'], south: geoname['south'], east: geoname['east'], west: geoname['west']};*/
             
             //ajaxGeonameIdChildren(country.geonameId);
             ajaxGeonameWikipedia(country.boundingBox);
+            //ajaxGeonameWeatherStations(country.boundingBox);
           },
           error: function(error) {
             console.log(error);
@@ -386,29 +389,18 @@ const ajaxGeonameIdChildren = function(geonameId) {
           data: {geonameId: geonameId},
           success: function(result) {
             //console.log(result);
-            var outerCluster = L.markerClusterGroup();
+            //var outerCluster = L.markerClusterGroup();
             result['data'].forEach(geoname => {
-              var stateIcon = L.icon({
-                iconUrl: 'img/state.ico',
+              var weatherIcon = L.icon({
+                iconUrl: 'img/weather/weather2.ico',
                 iconSize: [30, 30],
                 iconAnchor: [15, 0]
             });
-              let marker = L.marker([geoname.lat, geoname.lng], {icon: stateIcon}).addTo(outerCluster);
+              let marker = L.marker([geoname.lat, geoname.lng], {icon: weatherIcon}).addTo(geoJsonLayer);
               marker.bindPopup(`${geoname.name}`);
-              //adding event listener to the marker that will generate the cluster markers of it's children:
-              marker.on('click', function() {
-                worldMap.flyTo([geoname.lat, geoname.lng], 8);
-                if (this.clicked != true) {
-                var innerCluster = L.markerClusterGroup();
-                ajaxGeonameIdChildren2(geoname.geonameId, innerCluster);
-                geoJsonLayer.addLayer(innerCluster);
-                
-                this.clicked = true;
-                }
-              });
-            });
             
-            geoJsonLayer.addLayer(outerCluster);
+              });
+            
           },
           error: function(error) {
             console.log(error);
@@ -417,7 +409,7 @@ const ajaxGeonameIdChildren = function(geonameId) {
 }
 
 //defining function that will be called inside ajaxGeonameIdChildren to loop thorugh the subregion of the country and get markers for each of their own subregion:
-const ajaxGeonameIdChildren2 = function(geonameId, markerCluster) {
+/*const ajaxGeonameIdChildren2 = function(geonameId, markerCluster) {
   $.ajax({
           url: './php/geonameChildren.php',
           type: 'POST',
@@ -438,22 +430,23 @@ const ajaxGeonameIdChildren2 = function(geonameId, markerCluster) {
               marker.on('click', function() {
                 ajaxGeonameWikipedia(geoname.lat, geoname.lng);
                 //worldMap.flyTo([geoname.lat, geoname.lng]);
-                /*if (this.clicked != true) {
+                if (this.clicked != true) {
                 var innerCluster2 = L.markerClusterGroup();
                 ajaxGeonameIdChildren3(geoname.geonameId, innerCluster2);
                 geoJsonLayer.addLayer(innerCluster2);
-                this.clicked = true;*/
-                })
-            });
+                this.clicked = true;
+                  }
+              });
+            })
           },
           error: function(error) {
             console.log(error);
           }
         });
-}
+}*/
 
 //defining function that will be called inside ajaxGeonameIdChildren2 to loop thorugh the subregion of the country and get markers for each of their own subregion:
-const ajaxGeonameIdChildren3 = function(geonameId, markerCluster) {
+/*const ajaxGeonameIdChildren3 = function(geonameId, markerCluster) {
   $.ajax({
           url: './php/geonameChildren.php',
           type: 'POST',
@@ -475,7 +468,7 @@ const ajaxGeonameIdChildren3 = function(geonameId, markerCluster) {
             console.log(error);
           }
         });
-}
+}*/
 
 //defining function that will call the php routine wich will retrieve wikipedia articles to the marker clicked:
 const ajaxGeonameWikipedia = function(boundingBox) {
@@ -486,7 +479,7 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           data: {boundingBox: boundingBox},
           success: function(result) {
             console.log(result);
-            var wikiCluster = L.markerClusterGroup();
+            
             result['data'].forEach(geoname => {
               var wikiIcon = L.icon({
                     iconUrl: `img/wikiFeatures/${geoname.feature}.ico`,
@@ -496,9 +489,22 @@ const ajaxGeonameWikipedia = function(boundingBox) {
               let marker = L.marker([geoname.lat, geoname.lng], {icon: wikiIcon});
               var pipRes = leafletPip.pointInLayer(marker.getLatLng(), geoJsonLayer);
               if (pipRes.length) {
+                  var imgHTML = '';
+                  if (geoname.thumbnailImg) {
+                    imgHTML = `<br><img id="wikiImg" src="${geoname.thumbnailImg}">`;
+                    }
+                  var popupContent = `<div id="wikiPopupDiv">
+                                        <p>${geoname.summary}<a id="wikiAnchor" href='https:/${geoname.wikipediaUrl}' target='_blank'>read more</a></p>${imgHTML}
+                                      </div>`;
+                var wikiPopup = L.popup().setContent(popupContent);
+                
+                  
                   marker.addTo(wikiCluster);
-                  marker.bindPopup(`${geoname.summary} ${geoname.feature} <a href=https:/${geoname.wikipediaUrl} target='_blank'>read more</a> <img src=${geoname.thumbnailImg}>`);
-                  }
+                  marker.bindPopup(wikiPopup);
+                  /*marker.on('click', function() {
+                    worldMap.flyTo(marker.getLatLng());
+                  });*/
+                  }  
                })
             wikiCluster.addTo(geoJsonLayer);
           },
@@ -507,6 +513,37 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           }
         });
 }
+
+//defining funtion that will call the php routine to retrieve the weatherstations data for the given boundingbox:
+/*const ajaxGeonameWeatherStations = function(boundingBox) {
+  $.ajax({
+           url: './php/geonameWeatherStations.php',
+          type: 'POST',
+          dataType: 'json',
+          data: {boundingBox: boundingBox},
+          success: function(result) {
+            console.log(result);
+            
+            result['data'].forEach(weatherStation => {
+              var weatherIcon = L.icon({
+                iconUrl: `img/weather/weather2.ico`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 0]
+              });
+              
+              var marker = L.marker([weatherStation.lat, weatherStation.lng], {icon: weatherIcon});
+              var pipRes = leafletPip.pointInLayer(marker.getLatLng(), geoJsonLayer);
+              if (pipRes.length) {
+                marker.addTo(geoJsonLayer);
+              }
+            });
+            
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
+}*/
 //defining the function that will make the ajax request to the php routine handling the country borders and call ajaxRestCountries:
 const ajaxCountryBorders = function(iso3) {
   $.ajax({
@@ -523,10 +560,18 @@ const ajaxCountryBorders = function(iso3) {
             let isoCode = result['properties']['iso_a3'];
             country.name = result['properties']['name'];
             
+            
+            
             var myStyle = {"color": "#2D5EF9", "weight": 4, "opacity": 0.5};
             geoJsonLayer = L.geoJSON(geoJsonFeature, {style: myStyle}).addTo(worldMap);
             worldMap.fitBounds(geoJsonLayer.getBounds());
             
+            country.boundingBox = {
+              north: geoJsonLayer.getBounds().getNorth(),
+              south: geoJsonLayer.getBounds().getSouth(),
+              east: geoJsonLayer.getBounds().getEast(),
+              west: geoJsonLayer.getBounds().getWest()
+            }
             
             
             //ajaxOpenCage(countryName);
@@ -843,7 +888,11 @@ $('#HDIBtn').click(function() {
 
 //adding an event listener to the weather Btn:
 $('#weatherBtn').click(function() {
-  alert('weather button clicked');
+  if (!weatherBtnStatus) {
+  wikiCluster.clearLayers();
+  ajaxGeonameIdChildren(country.geonameId);
+  weatherBtnStatus = true;
+  }
   event.stopPropagation();
 });
 
@@ -857,8 +906,16 @@ const onMapClick = function(e) {
     ajaxCountryBorders(clickISO3);
     }
   }, 600);
+  weatherBtnStatus = false;
  }
 worldMap.on('click', onMapClick);
+//defining onPopupOpen event function to center the map using the popup container:
+const onPopupOpen = function(e) {
+  var px = worldMap.project(e.target._popup._latlng); // find the pixel location on the map where the popup anchor is
+    px.y -= e.target._popup._container.clientHeight/2; // find the height of the popup container, divide by 2, subtract from the Y axis of marker location
+    worldMap.panTo(worldMap.unproject(px),{animate: true}); // pan to new center
+}
+worldMap.on('popupopen', onPopupOpen);
 //EVENT HANDLERS END
 
 
