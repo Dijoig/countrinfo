@@ -7,7 +7,9 @@ var userISO3;
 var clickISO3;
 var infoTableStatus;
 var weatherBtnStatus = false;
+var capitalMarker;
 var wikiCluster = L.markerClusterGroup();
+var weatherCluster;
 
 
 //country obj that will store data from the selected country:
@@ -144,7 +146,7 @@ const ajaxOpenExchangeRate = function(currencyCode) {
   });
 }
 
-//defining the function that will make the calls to the routines that will get weather data from openWeather api:
+//defining the function that will make the calls to the routines that will get weather forecast data from openWeather api:
 const ajaxOpenWeather = function(lat, lon) {
   $.ajax({
         url: './php/openWeatherOneCall.php',
@@ -189,6 +191,53 @@ const ajaxOpenWeather = function(lat, lon) {
       });
 }
 
+//defining function that will call the php routine to get weather from openWeather to fill the weather map with info:
+const ajaxOpenWeatherMap = function(lat, lon, name) {
+  $.ajax({
+        url: './php/openWeatherOneCall.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+          lat: lat,
+          lon: lon
+        },
+        success: function(result) {
+          console.log(result);
+  
+          var weatherData = result['data'];
+          
+          var weatherIcon = new L.DivIcon({
+                className: 'weatherDivIcon',
+                html: `<figure>
+                        <img class="weatherIconImg" src='http://openweathermap.org/img/w/${weatherData.current.weather[0].icon}.png'>
+                        <figcaption>${weatherData.current.temp}°C</figcaption>  
+                      </figure>
+                      `
+            });
+          let marker = L.marker([lat, lon], {icon: weatherIcon}).addTo(weatherCluster);
+          weatherCluster.addTo(geoJsonLayer);
+          
+          marker.on('click', function() {
+            if (infoTableStatus != "weather data") {
+              weatherTableUpdate(weatherData, name);
+              infoTableStatus = "weather data";
+              $('#tableCol').show();
+              removeEventPropagation([$('#weatherTable')], 'click');
+            } else {
+              $('#tableCol').hide();
+              infoTableStatus = "";
+            }
+            event.stopPropagation();
+          });
+          removeEventPropagation([marker], 'dblclick');
+          
+      },
+        error: function(error) {
+          console.log(error);
+        }
+      });
+}
+
 //defining function that will make call to openWeather to get the coords for the country capital, and display a marker on the map with the results;
 const ajaxOpenWeatherCapital = function(city) {
   $.ajax({
@@ -203,8 +252,8 @@ const ajaxOpenWeatherCapital = function(city) {
           iconSize: [30, 30],
           iconAnchor: [15, 0]
 });
-      var markerCity = L.marker([result['data']['lat'], result['data']['lon']], {icon: capitalIcon}).addTo(geoJsonLayer);
-      markerCity.bindPopup(`${country.capital}`);
+      capitalMarker = L.marker([result['data']['lat'], result['data']['lon']], {icon: capitalIcon}).addTo(geoJsonLayer);
+      capitalMarker.bindPopup(`${country.capital}`);
     },
     error: function(error) {
       console.log(error);
@@ -388,17 +437,12 @@ const ajaxGeonameIdChildren = function(geonameId) {
           dataType: 'json',
           data: {geonameId: geonameId},
           success: function(result) {
-            //console.log(result);
-            //var outerCluster = L.markerClusterGroup();
+            console.log(result);
+            geoJsonLayer.removeLayer(wikiCluster);
+            weatherCluster = L.markerClusterGroup();
             result['data'].forEach(geoname => {
-              var weatherIcon = L.icon({
-                iconUrl: 'img/weather/weather2.ico',
-                iconSize: [30, 30],
-                iconAnchor: [15, 0]
-            });
-              let marker = L.marker([geoname.lat, geoname.lng], {icon: weatherIcon}).addTo(geoJsonLayer);
-              marker.bindPopup(`${geoname.name}`);
-            
+              
+              ajaxOpenWeatherMap(geoname.lat, geoname.lng, geoname.name);
               });
             
           },
@@ -478,8 +522,8 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           dataType: 'json',
           data: {boundingBox: boundingBox},
           success: function(result) {
-            console.log(result);
-            
+            //console.log(result);
+           
             result['data'].forEach(geoname => {
               var wikiIcon = L.icon({
                     iconUrl: `img/wikiFeatures/${geoname.feature}.ico`,
@@ -554,7 +598,14 @@ const ajaxCountryBorders = function(iso3) {
           success: function(result) {
             if (geoJsonLayer) {
               geoJsonLayer.clearLayers();
+              wikiCluster.clearLayers();
             }
+            if (weatherCluster) {
+              weatherCluster.clearLayers();
+              weatherCluster = 0;
+            }
+            
+            
             //console.log(result);
             geoJsonFeature = result;
             let isoCode = result['properties']['iso_a3'];
@@ -813,6 +864,170 @@ const hdiDataTableUpdate = function() {
           </table>
 `;
 }
+
+const weatherTableUpdate = function(weatherData, place) {
+  var weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var daysMs = [];
+  var icons = [];
+  var humidities = [];
+  var windSpeeds = [];
+  var minTemps = [];
+  var maxTemps = [];
+  for (var i=0; i<weatherData.daily.length; i++) {
+    daysMs[i] = new Date(weatherData.daily[i].dt * 1000);
+    icons[i] = weatherData.daily[i].weather[0].icon;
+    humidities[i] = weatherData.daily[i].humidity;
+    windSpeeds[i] = (weatherData.daily[i].wind_speed*3.6).toFixed(1);
+    minTemps[i] = weatherData.daily[i].temp.min;
+    maxTemps[i] = weatherData.daily[i].temp.max;
+  }
+  $('#tableCol')[0].innerHTML = `
+        <table class="table  table-sm table-striped table-hover table-dark" id="weatherTable">
+          <thead>
+            <tr>
+              <th colspan="4">${place} Weather Forecast</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr>
+              <td>${weekDays[daysMs[0].getDay()]}</td>
+              <td><figure>
+                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[0]}.png">
+                    <figcaption>${minTemps[0]}°C - ${maxTemps[0]}°C</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/humidity.ico">
+                    <figcaption>${humidities[0]}%</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/wind.ico">
+                    <figcaption>${windSpeeds[0]}km/h</figcaption>
+                  </figure>
+              </td>
+            </tr>
+
+            <tr>
+              <td>${weekDays[daysMs[1].getDay()]}</td>
+              <td><figure>
+                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[1]}.png">
+                    <figcaption>${minTemps[1]}°C - ${maxTemps[1]}°C</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/humidity.ico">
+                    <figcaption>${humidities[1]}%</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/wind.ico">
+                    <figcaption>${windSpeeds[1]}km/h</figcaption>
+                  </figure>
+              </td>
+            </tr>
+
+            <tr>
+              <td>${weekDays[daysMs[2].getDay()]}</td>
+              <td><figure>
+                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[2]}.png">
+                    <figcaption>${minTemps[2]}°C - ${maxTemps[2]}°C</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/humidity.ico">
+                    <figcaption>${humidities[2]}%</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/wind.ico">
+                    <figcaption>${windSpeeds[2]}km/h</figcaption>
+                  </figure>
+              </td>
+            </tr>
+
+            <tr>
+              <td>${weekDays[daysMs[3].getDay()]}</td>
+              <td><figure>
+                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[3]}.png">
+                    <figcaption>${minTemps[3]}°C - ${maxTemps[3]}°C</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/humidity.ico">
+                    <figcaption>${humidities[3]}%</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/wind.ico">
+                    <figcaption>${windSpeeds[3]}km/h</figcaption>
+                  </figure>
+              </td>
+            </tr>
+
+            <tr>
+              <td>${weekDays[daysMs[4].getDay()]}</td>
+              <td><figure>
+                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[4]}.png">
+                    <figcaption>${minTemps[4]}°C - ${maxTemps[4]}°C</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/humidity.ico">
+                    <figcaption>${humidities[4]}%</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/wind.ico">
+                    <figcaption>${windSpeeds[4]}km/h</figcaption>
+                  </figure>
+              </td>
+            </tr>
+
+            <tr>
+              <td>${weekDays[daysMs[5].getDay()]}</td>
+              <td><figure>
+                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[5]}.png">
+                    <figcaption>${minTemps[5]}°C - ${maxTemps[5]}°C</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/humidity.ico">
+                    <figcaption>${humidities[5]}%</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/wind.ico">
+                    <figcaption>${windSpeeds[5]}km/h</figcaption>
+                  </figure>
+              </td>
+            </tr>
+
+            <tr>
+              <td>${weekDays[daysMs[6].getDay()]}</td>
+              <td><figure>
+                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[6]}.png">
+                    <figcaption>${minTemps[6]}°C - ${maxTemps[6]}°C</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/humidity.ico">
+                    <figcaption>${humidities[6]}%</figcaption>
+                  </figure>
+              </td>
+              <td><figure>
+                    <img class="img-fluid" src="img/weather/wind.ico">
+                    <figcaption>${windSpeeds[06]}km/h</figcaption>
+                  </figure>
+              </td>
+            </tr>
+
+          </tbody>
+          </table>
+`;
+}
+
 //INFORMATION TABLE FUNCTIONS END:
 
 
@@ -889,9 +1104,19 @@ $('#HDIBtn').click(function() {
 //adding an event listener to the weather Btn:
 $('#weatherBtn').click(function() {
   if (!weatherBtnStatus) {
-  wikiCluster.clearLayers();
-  ajaxGeonameIdChildren(country.geonameId);
-  weatherBtnStatus = true;
+    if(!weatherCluster) {
+      ajaxGeonameIdChildren(country.geonameId);
+    } else {
+      geoJsonLayer.removeLayer(wikiCluster);
+      weatherCluster.addTo(geoJsonLayer);
+    }
+    geoJsonLayer.removeLayer(capitalMarker);
+    weatherBtnStatus = true;
+  } else {
+    geoJsonLayer.removeLayer(weatherCluster);
+    wikiCluster.addTo(geoJsonLayer);
+    capitalMarker.addTo(geoJsonLayer);
+    weatherBtnStatus = false;
   }
   event.stopPropagation();
 });
