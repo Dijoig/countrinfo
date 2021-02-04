@@ -12,6 +12,7 @@ var wikiCluster = L.markerClusterGroup();
 var weatherCluster;
 
 
+
 //country obj that will store data from the selected country:
 const country = {};
 //weather object that will store data from the current weather and forecast:
@@ -112,7 +113,7 @@ const ajaxRestCountries = function(countryName) {
       
       console.log(country);
       //logic to pudate the general data table in case it is the one visible:
-      if (infoTableStatus == "general data") {
+      if (infoTableStatus == "general") {
         generalDataTableUpdate();
       }
       
@@ -218,11 +219,12 @@ const ajaxOpenWeatherMap = function(lat, lon, name) {
           weatherCluster.addTo(geoJsonLayer);
           
           marker.on('click', function() {
-            if (infoTableStatus != "weather data") {
+            if (infoTableStatus != "weather") {
               weatherTableUpdate(weatherData, name);
-              infoTableStatus = "weather data";
+              infoTableStatus = "weather";
               $('#tableCol').show();
               removeEventPropagation([$('#weatherTable')], 'click');
+              removeEventPropagation([$('#weatherTable')], 'dblclick');
             } else {
               $('#tableCol').hide();
               infoTableStatus = "";
@@ -301,7 +303,7 @@ const ajaxCovid19 = function(iso3) {
           active: 'not available'
         }
       }
-      if (infoTableStatus == "covid data") {
+      if (infoTableStatus == "covid") {
         covidDataTableUpdate();
       }
     },
@@ -344,7 +346,7 @@ const ajaxHDI = function(iso3) {
           hdiRank: "not available"
         }
       }
-      if (infoTableStatus == "hdi data") {
+      if (infoTableStatus == "hdi") {
         hdiDataTableUpdate();
       }
     }
@@ -417,7 +419,7 @@ const ajaxGeonameId = function(iso2) {
             var geoname = result['data'][0];
             country.areaKm = geoname['areaInSqKm'];
             country.geonameId = geoname['geonameId'];
-            /*country.boundingBox = {north: geoname['north'], south: geoname['south'], east: geoname['east'], west: geoname['west']};*/
+            country.boundingBox = {north: geoname['north'], south: geoname['south'], east: geoname['east'], west: geoname['west']};
             
             //ajaxGeonameIdChildren(country.geonameId);
             ajaxGeonameWikipedia(country.boundingBox);
@@ -514,18 +516,16 @@ const ajaxGeonameIdChildren = function(geonameId) {
         });
 }*/
 
-//defining function that will call the php routine wich will retrieve wikipedia articles to the marker clicked:
-const ajaxGeonameWikipedia = function(boundingBox) {
-  $.ajax({
-           url: './php/geonameWikipedia.php',
+//function to get the image of the wikipedia marker:
+const ajaxWikipediaImage = function(geoname) {
+    $.ajax({
+          url: './php/wikipediaImage.php',
           type: 'POST',
           dataType: 'json',
-          data: {boundingBox: boundingBox},
+          data: {title: encodeURIComponent(geoname.title)},
           success: function(result) {
             //console.log(result);
-           
-            result['data'].forEach(geoname => {
-              var wikiIcon = L.icon({
+            var wikiIcon = L.icon({
                     iconUrl: `img/wikiFeatures/${geoname.feature}.ico`,
                     iconSize: [30, 30],
                     iconAnchor: [15, 0]
@@ -533,22 +533,73 @@ const ajaxGeonameWikipedia = function(boundingBox) {
               let marker = L.marker([geoname.lat, geoname.lng], {icon: wikiIcon});
               var pipRes = leafletPip.pointInLayer(marker.getLatLng(), geoJsonLayer);
               if (pipRes.length) {
-                  var imgHTML = '';
-                  if (geoname.thumbnailImg) {
-                    imgHTML = `<br><img id="wikiImg" src="${geoname.thumbnailImg}">`;
+                  var imageHTML = '';
+                  var imageUrl;
+                  if (result.data) {
+                    var pages = result.data.query.pages;
+                    var page0 = pages[Object.keys(pages)[0]];
+                    if (page0.thumbnail) {
+                      imageUrl = page0.thumbnail.source;
+                      }
+                 }
+                  
+                if (imageUrl) {
+                    imageHTML = `<br><img class="img-fluid" id="wikiImg" src="${imageUrl}">`;
                     }
                   var popupContent = `<div id="wikiPopupDiv">
-                                        <p>${geoname.summary}<a id="wikiAnchor" href='https:/${geoname.wikipediaUrl}' target='_blank'>read more</a></p>${imgHTML}
+                                        <p>${geoname.summary}<a id="wikiAnchor" href="https://${geoname.wikipediaUrl}" target='_blank'>read more</a>${imageHTML}</p>
                                       </div>`;
                 var wikiPopup = L.popup().setContent(popupContent);
                 
                   
                   marker.addTo(wikiCluster);
                   marker.bindPopup(wikiPopup);
-                  /*marker.on('click', function() {
-                    worldMap.flyTo(marker.getLatLng());
-                  });*/
+                  removeEventPropagation([$(marker)], 'dblclick');
                   }  
+            
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
+  
+  
+}
+//defining function that will call the php routine wich will retrieve wikipedia articles to the marker clicked:
+const ajaxGeonameWikipedia = function(boundingBox) {
+  $.ajax({
+          url: './php/geonameWikipedia.php',
+          type: 'POST',
+          dataType: 'json',
+          data: {boundingBox: boundingBox},
+          success: function(result) {
+            console.log(result);
+           
+            result['data'].forEach(geoname => {
+              ajaxWikipediaImage(geoname);
+              /*var wikiIcon = L.icon({
+                    iconUrl: `img/wikiFeatures/${geoname.feature}.ico`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 0]
+                  });
+              let marker = L.marker([geoname.lat, geoname.lng], {icon: wikiIcon});
+              var pipRes = leafletPip.pointInLayer(marker.getLatLng(), geoJsonLayer);
+              if (pipRes.length) {
+                  var imageHTML = '';
+                  ajaxWikipediaImage(geoname, marker);
+                if (geoname.thumbnailImg) {
+                    imageHTML = `<br><img id="wikiImg" src="${geoname.thumbnailImg}">`;
+                    }
+                  var popupContent = `<div id="wikiPopupDiv">
+                                        <p>${geoname.summary}<a id="wikiAnchor" href="https://${geoname.wikipediaUrl}" target='_blank'>read more</a>${imageHTML}</p>
+                                      </div>`;
+                var wikiPopup = L.popup().setContent(popupContent);
+                
+                  
+                  marker.addTo(wikiCluster);
+                  marker.bindPopup(wikiPopup);
+                  removeEventPropagation([$(marker)], 'dblclick');
+                  } */ 
                })
             wikiCluster.addTo(geoJsonLayer);
           },
@@ -591,7 +642,7 @@ const ajaxGeonameWikipedia = function(boundingBox) {
 //defining the function that will make the ajax request to the php routine handling the country borders and call ajaxRestCountries:
 const ajaxCountryBorders = function(iso3) {
   $.ajax({
-           url: './php/countryBordersHandler.php',
+          url: './php/countryBordersHandler.php',
           type: 'POST',
           dataType: 'json',
           data: {countryCode: iso3},
@@ -617,12 +668,12 @@ const ajaxCountryBorders = function(iso3) {
             geoJsonLayer = L.geoJSON(geoJsonFeature, {style: myStyle}).addTo(worldMap);
             worldMap.fitBounds(geoJsonLayer.getBounds());
             
-            country.boundingBox = {
+            /*country.boundingBox = {
               north: geoJsonLayer.getBounds().getNorth(),
               south: geoJsonLayer.getBounds().getSouth(),
               east: geoJsonLayer.getBounds().getEast(),
               west: geoJsonLayer.getBounds().getWest()
-            }
+            }*/
             
             
             //ajaxOpenCage(countryName);
@@ -711,7 +762,7 @@ var topLeftDivHTML = `
 
       </div> 
 
-       <div class="col-9 col-sm-6 col-lg-4 col-xl-3 table-responsive" id="tableCol">
+       <div class="col-9 col-sm-6 col-lg-4 col-xl-3 table-responsive leaflet-control" id="tableCol">
         
       </div>
     </div>
@@ -882,7 +933,7 @@ const weatherTableUpdate = function(weatherData, place) {
     maxTemps[i] = weatherData.daily[i].temp.max;
   }
   $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-dark" id="weatherTable">
+        <table class="table  table-sm table-striped table-hover table-dark leaflet-control" id="weatherTable">
           <thead>
             <tr>
               <th colspan="4">${place} Weather Forecast</th>
@@ -894,7 +945,7 @@ const weatherTableUpdate = function(weatherData, place) {
               <td>${weekDays[daysMs[0].getDay()]}</td>
               <td><figure>
                     <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[0]}.png">
-                    <figcaption>${minTemps[0]}°C - ${maxTemps[0]}°C</figcaption>
+                    <figcaption>${minTemps[0]}°C <span style="color:grey">/</span> ${maxTemps[0]}°C</figcaption>
                   </figure>
               </td>
               <td><figure>
@@ -913,7 +964,7 @@ const weatherTableUpdate = function(weatherData, place) {
               <td>${weekDays[daysMs[1].getDay()]}</td>
               <td><figure>
                     <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[1]}.png">
-                    <figcaption>${minTemps[1]}°C - ${maxTemps[1]}°C</figcaption>
+                    <figcaption>${minTemps[1]}°C <span style="color:grey">/</span> ${maxTemps[1]}°C</figcaption>
                   </figure>
               </td>
               <td><figure>
@@ -932,7 +983,7 @@ const weatherTableUpdate = function(weatherData, place) {
               <td>${weekDays[daysMs[2].getDay()]}</td>
               <td><figure>
                     <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[2]}.png">
-                    <figcaption>${minTemps[2]}°C - ${maxTemps[2]}°C</figcaption>
+                    <figcaption>${minTemps[2]}°C  <span style="color:grey">/</span>  ${maxTemps[2]}°C</figcaption>
                   </figure>
               </td>
               <td><figure>
@@ -951,7 +1002,7 @@ const weatherTableUpdate = function(weatherData, place) {
               <td>${weekDays[daysMs[3].getDay()]}</td>
               <td><figure>
                     <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[3]}.png">
-                    <figcaption>${minTemps[3]}°C - ${maxTemps[3]}°C</figcaption>
+                    <figcaption>${minTemps[3]}°C  <span style="color:grey">/</span>  ${maxTemps[3]}°C</figcaption>
                   </figure>
               </td>
               <td><figure>
@@ -970,7 +1021,7 @@ const weatherTableUpdate = function(weatherData, place) {
               <td>${weekDays[daysMs[4].getDay()]}</td>
               <td><figure>
                     <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[4]}.png">
-                    <figcaption>${minTemps[4]}°C - ${maxTemps[4]}°C</figcaption>
+                    <figcaption>${minTemps[4]}°C  <span style="color:grey">/</span>  ${maxTemps[4]}°C</figcaption>
                   </figure>
               </td>
               <td><figure>
@@ -989,7 +1040,7 @@ const weatherTableUpdate = function(weatherData, place) {
               <td>${weekDays[daysMs[5].getDay()]}</td>
               <td><figure>
                     <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[5]}.png">
-                    <figcaption>${minTemps[5]}°C - ${maxTemps[5]}°C</figcaption>
+                    <figcaption>${minTemps[5]}°C  <span style="color:grey">/</span>  ${maxTemps[5]}°C</figcaption>
                   </figure>
               </td>
               <td><figure>
@@ -1008,7 +1059,7 @@ const weatherTableUpdate = function(weatherData, place) {
               <td>${weekDays[daysMs[6].getDay()]}</td>
               <td><figure>
                     <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[6]}.png">
-                    <figcaption>${minTemps[6]}°C - ${maxTemps[6]}°C</figcaption>
+                    <figcaption>${minTemps[6]}°C  <span style="color:grey">/</span>  ${maxTemps[6]}°C</figcaption>
                   </figure>
               </td>
               <td><figure>
@@ -1063,12 +1114,13 @@ $('#myLocationBtn').click(function() {
 
 //adding event listener to infoBtn:
 $('#infoBtn').click(function() { 
-  if (infoTableStatus != "general data") {
+  if (infoTableStatus != "general") {
     generalDataTableUpdate();
-    infoTableStatus = "general data";
+    infoTableStatus = "general";
     $('#tableCol').show();
     //avoiding bubling events on elements:
   removeEventPropagation([$('#countryWikiBtn'), $('#infoTable')], 'click');
+  removeEventPropagation([$('#countryWikiBtn'), $('#infoTable')], 'dblclick');
   } else {
     $('#tableCol').toggle();
   }
@@ -1077,11 +1129,12 @@ $('#infoBtn').click(function() {
 
 //adding an event listener to the covidBtn:
 $('#covidBtn').click(function() {
-  if (infoTableStatus != "covid data") {
+  if (infoTableStatus != "covid") {
     covidDataTableUpdate();
-    infoTableStatus = "covid data";
+    infoTableStatus = "covid";
     $('#tableCol').show();
     removeEventPropagation([$('#covidTable')], 'click');
+    removeEventPropagation([$('#covidTable')], 'dblclick')
   } else {
     $('#tableCol').toggle();
   }
@@ -1090,11 +1143,12 @@ $('#covidBtn').click(function() {
 
 //adding an event listener to the HDI btn:
 $('#HDIBtn').click(function() {
-  if (infoTableStatus != "hdi data") {
+  if (infoTableStatus != "hdi") {
     hdiDataTableUpdate();
-    infoTableStatus = "hdi data";
+    infoTableStatus = "hdi";
     $('#tableCol').show();
     removeEventPropagation([$('#hdiTable')], 'click');
+    removeEventPropagation([$('#hdiTable')], 'dblclick');
   } else {
     $('#tableCol').toggle();
   }
@@ -1103,6 +1157,7 @@ $('#HDIBtn').click(function() {
 
 //adding an event listener to the weather Btn:
 $('#weatherBtn').click(function() {
+  $('#tableCol').hide();
   if (!weatherBtnStatus) {
     if(!weatherCluster) {
       ajaxGeonameIdChildren(country.geonameId);
@@ -1113,10 +1168,14 @@ $('#weatherBtn').click(function() {
     geoJsonLayer.removeLayer(capitalMarker);
     weatherBtnStatus = true;
   } else {
-    geoJsonLayer.removeLayer(weatherCluster);
-    wikiCluster.addTo(geoJsonLayer);
-    capitalMarker.addTo(geoJsonLayer);
-    weatherBtnStatus = false;
+      if (infoTableStatus == "weather") {
+        infoTableStatus = "";
+    } else {
+        geoJsonLayer.removeLayer(weatherCluster);
+        wikiCluster.addTo(geoJsonLayer);
+        capitalMarker.addTo(geoJsonLayer);
+        weatherBtnStatus = false;
+    }
   }
   event.stopPropagation();
 });

@@ -86,6 +86,10 @@
   text-align: left;
 }
 
+#infoTable th a {
+  float: right;
+}
+
 #covidTable {
   text-align: left;
   font-weight: 550;
@@ -93,7 +97,7 @@
 
 #covidTable td {
   font-size: 120%;
-  color: green;
+  color: forestgreen;
 }
 
 #covidTable th {
@@ -110,12 +114,12 @@
 
 #hdiTable td {
   font-size: 120%;
-  color: dimgray;
+  color: darkcyan;
 }
 
 #hdiTable th {
   font-size: 140%;
-  background-color: coral;
+  background-color: goldenrod;
   color: white;
   text-align: left;
 }
@@ -140,6 +144,8 @@
   text-align: left;
 }
 
+
+
 .leaflet-popup-content-wrapper {
   overflow: auto;
 }
@@ -151,6 +157,7 @@
 .leaflet-popup-tip-container {
   
 }
+
 
 .weatherDivIcon {
   width: 70px !important;
