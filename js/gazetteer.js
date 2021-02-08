@@ -447,6 +447,8 @@ const ajaxGeonameIdChildren = function(geonameId) {
               ajaxOpenWeatherMap(geoname.lat, geoname.lng, geoname.name);
               });
             
+            worldMap.fitBounds(geoJsonLayer.getBounds());
+            
           },
           error: function(error) {
             console.log(error);
@@ -600,7 +602,7 @@ const ajaxGeonameWikipedia = function(boundingBox) {
                   marker.bindPopup(wikiPopup);
                   removeEventPropagation([$(marker)], 'dblclick');
                   } */ 
-               })
+               });
             wikiCluster.addTo(geoJsonLayer);
           },
           error: function(error) {
