@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Gazetteer</title>
+  <link rel="stylesheet"  href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/gazetteer.css">
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+  <link rel="stylesheet" href="css/MarkerCluster.css">
+  <link rel="stylesheet" href="css/MarkerCluster.Default.css">
+</head>
+  
+  
+<body> 
+  
+  
+  <div class="" id="mapId">
+    
+    <div class="container" id="mapHtmlDiv" style="position: absolute; z-index: 999">
+      
+      <div class="row" id="selectionRow">
+        <div class="col-4 col-sm-5">
+        </div> 
+        <div id="selectDiv" class="col-8 col-sm-7">
+          <select class="leaflet-control form-select" size="1" id="countrySelection"><option>Afeganistan</option></select>
+        </div>
+      </div>
+
+      <div class="row" id="btnRow">
+        <div class="col-2 col-sm-1 leaflet-control" id="btnCol">
+
+          <div class="row mt-1"><button class="btn" id="infoBtn"><img class="img-fluid figure" src="img/infoBtnIco.ico"></button></div>
+          <div class="row mt-1"><button class="btn" id="covidBtn"><img class="img-fluid figure" src="img/covidBtnImg2.png"></button></div>
+          <div class="row mt-1"><button class="btn" id="HDIBtn"><img class="img-fluid figure" src="img/lifeQualityIcon.ico"></button></div>
+          <div class="row mt-1"><button class="btn" id="weatherBtn"><img class="img-fluid figure" src="img/weatherIcon2.ico"></button></div>
+
+        </div> 
+
+         <div class="col-9 col-sm-6 col-lg-4 col-xl-3 table-responsive leaflet-control" id="tableCol">
+
+           <table class="table  table-sm table-striped table-hover table-light leaflet-control" id="infoTable" style="display: none">
+            <thead>
+              <tr>
+                <th colspan="2" id="infoTh"><img id="infoFlagImg" class="img-fluid" src=""><p style="display: inline" id="infoNameTxt"></p><a href="" class="btn" id="countryWikiBtn" target="_blank"><img class="img-fluid figure" src="img/wiki.ico"></a></th>
+
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><img class="img-fluid" src="img/capital.ico"></td>
+                <td id="capitalTxt"></td>     
+              </tr>
+              <tr>
+                <td><img class="img-fluid" src="img/populationIcon.ico"></td>
+                <td id="populationTxt"></td>     
+              </tr>
+              <tr>
+                <td><img class="img-fluid" src="img/languageIcon.ico"></td>
+                <td id="languagesTxt"></td>     
+              </tr>
+              <tr>
+                <td><img class="img-fluid" src="img/currencyIcon.ico"></td>
+                <td id="currencyTxt"></td>      
+              <tr>
+                <td><img class="img-fluid" src="img/exchange.ico"></td>
+                <td id="currencyExchangeTxt"></td>      
+              </tr>
+              <tr>
+                <td><img class="img-fluid" src="img/union.ico"></td>
+                <td id="unionTxt"></td>      
+              </tr>
+              <tr>
+                <td><img class="img-fluid" src="img/callCode.ico"></td>
+                <td id="callingCodeTxt"></td>      
+              </tr>
+            </tbody>
+          </table>
+
+           <table class="table  table-sm table-striped table-hover table-info leaflet-control" id="covidTable" style="display: none">
+              <thead>
+                <tr>
+                  <th colspan="3"><img class="img-fluid" id="covidFlagImg" src=""><p style="display: inline" id="covidNameTxt"></p></th>
+                </tr>
+                <tr>
+                  <th><img class="img-fluid" src="img/covid.ico"></th>
+                  <th>Yesterday</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><img class="img-fluid" src="img/cases.ico"> Cases</td>
+                  <td id="yesterdayConfirmed"></td>
+                  <td id="totalConfirmed"></td>
+                </tr>
+                <tr>
+                  <td><img class="img-fluid" src="img/death.ico"> Deaths</td>
+                  <td id="yesterdayDeaths"></td>
+                  <td id="totalDeaths"></td>  
+                </tr>
+                <tr>
+                  <td><img class="img-fluid" src="img/injection.ico"> Cured</td>
+                  <td id="yesterdayRecovered"></td>
+                  <td id="totalRecovered"></td>     
+                </tr>
+                <tr>
+                  <td><img class="img-fluid" src="img/active.ico"> Active</td>
+                  <td id="yesterdayActive"></td>
+                  <td id="totalActive"></td>
+                </tr>
+              </tbody>
+            </table>
+           
+            <table class="table  table-sm table-striped table-hover table-info leaflet-control" id="hdiTable" style="display: none">
+              <thead>
+                <tr>
+                  <th colspan="3"><img class="img-fluid" id="hdiFlagImg" src=""><p style="display: inline" id="hdiNameTxt"></p></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><img class="img-fluid" src="img/hdiValue.ico"></td>
+                  <td>HDI value</td>
+                  <td id="hdiValueTxt"></td>     
+                </tr>
+                <tr>
+                  <td><img class="img-fluid" src="img/ladder.ico"></td>
+                  <td>HDI rank</td>
+                  <td id="hdiRankTxt"></td>     
+                </tr>
+                <tr>
+                  <td><img class="img-fluid" src="img/gniCapita.ico"></td>
+                  <td>GNI/capita (USD)/year</td>
+                  <td id="gniTxt"></td>     
+                </tr>
+                <tr>
+                  <td><img class="img-fluid" src="img/jobs.ico"></td>
+                  <td>Unemployment</td>
+                  <td id="unemploymentTxt"></td>     
+                </tr>
+                <tr>
+                  <td><img class="img-fluid" src="img/life.ico"></td>
+                  <td>Life Expctancy</td>
+                  <td id="lifeExpctancyTxt"></td>     
+                </tr>
+              </tbody>
+          </table>
+           
+            <table class="table  table-sm table-striped table-hover table-dark leaflet-control" id="weatherTable" style="display: none">
+            <thead>
+              <tr>
+                <th colspan="4" id="weatherNameTxt"></th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <tr>
+                <td id="day0Txt"></td>
+                <td><figure>
+                      <img class="img-fluid"  id="day0Icon" src="">
+                      <figcaption id="day0TempTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/humidity.ico">
+                      <figcaption id="day0HumidityTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/wind.ico">
+                      <figcaption id="day0WindSpeedTxt"></figcaption>
+                    </figure>
+                </td>
+              </tr>
+
+              <tr>
+                <td id="day1Txt"></td>
+                <td><figure>
+                      <img class="img-fluid"  id="day1Icon" src="">
+                      <figcaption id="day1TempTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/humidity.ico">
+                      <figcaption id="day1HumidityTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/wind.ico">
+                      <figcaption id="day1WindSpeedTxt"></figcaption>
+                    </figure>
+                </td>
+              </tr>
+
+              <tr>
+                <td id="day2Txt"></td>
+                <td><figure>
+                      <img class="img-fluid"  id="day2Icon" src="">
+                      <figcaption id="day2TempTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/humidity.ico">
+                      <figcaption id="day2HumidityTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/wind.ico">
+                      <figcaption id="day2WindSpeedTxt"></figcaption>
+                    </figure>
+                </td>
+              </tr>
+
+              <tr>
+                <td id="day3Txt"></td>
+                <td><figure>
+                      <img class="img-fluid"  id="day3Icon" src="">
+                      <figcaption id="day3TempTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/humidity.ico">
+                      <figcaption id="day3HumidityTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/wind.ico">
+                      <figcaption id="day3WindSpeedTxt"></figcaption>
+                    </figure>
+                </td>
+              </tr>
+
+              <tr>
+                <td id="day4Txt"></td>
+                <td><figure>
+                      <img class="img-fluid"  id="day4Icon" src="">
+                      <figcaption id="day4TempTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/humidity.ico">
+                      <figcaption id="day4HumidityTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/wind.ico">
+                      <figcaption id="day4WindSpeedTxt"></figcaption>
+                    </figure>
+                </td>
+              </tr>
+
+              <tr>
+                <td id="day5Txt"></td>
+                <td><figure>
+                      <img class="img-fluid"  id="day5Icon" src="">
+                      <figcaption id="day5TempTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/humidity.ico">
+                      <figcaption id="day5HumidityTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/wind.ico">
+                      <figcaption id="day5WindSpeedTxt"></figcaption>
+                    </figure>
+                </td>
+              </tr>
+
+              <tr>
+                <td id="day6Txt"></td>
+                <td><figure>
+                      <img class="img-fluid"  id="day6Icon" src="">
+                      <figcaption id="day6TempTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/humidity.ico">
+                      <figcaption id="day6HumidityTxt"></figcaption>
+                    </figure>
+                </td>
+                <td><figure>
+                      <img class="img-fluid" src="img/weather/wind.ico">
+                      <figcaption id="day6WindSpeedTxt"></figcaption>
+                    </figure>
+                </td>
+              </tr>
+
+            </tbody>
+            </table> 
+
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.4.0/umd/popper.min.js"></script>
+<script src="js/bootstrap.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.5.1.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+ <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+<script src="js/leaflet.markercluster-src.js"></script>
+  <script src="https://unpkg.com/leaflet-pip@latest/leaflet-pip.js
+"></script>
+<script src="js/gazetteer.js"></script>
+
+</html>
+        

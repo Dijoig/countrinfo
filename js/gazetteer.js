@@ -222,6 +222,10 @@ const ajaxOpenWeatherMap = function(lat, lon, name) {
             if (infoTableStatus != "weather") {
               weatherTableUpdate(weatherData, name);
               infoTableStatus = "weather";
+              $('#covidTable').hide();
+              $('#hdiTable').hide();
+              $('#infoTable').hide();
+              $('#weatherTable').show();
               $('#tableCol').show();
               removeEventPropagation([$('#weatherTable')], 'click');
               removeEventPropagation([$('#weatherTable')], 'dblclick');
@@ -743,34 +747,7 @@ L.Control.textbox = L.Control.extend({
 const newDiv = function(opts) { return new L.Control.textbox(opts);}
 newDiv({ position: position}).addTo(worldMap);
 }
-//seeting up the content of the top left div:
-var topLeftDivHTML = `
-    
-    <div class="row" id="selectionRow">
-      <div class="col-4 col-sm-5">
-      </div> 
-      <div id="selectDiv" class="col-8 col-sm-7">
-        <select class="leaflet-control" id="countrySelection"><option>Afeganistan</option></select>
-      </div>
-    </div>
-    
-    <div class="row" id="btnRow">
-      <div class="col-2 col-sm-1 leaflet-control" id="btnCol">
 
-        <div class="row mt-1"><button class="btn" id="infoBtn"><img class="img-fluid figure" src="img/infoBtnIco.ico"></button></div>
-        <div class="row mt-1"><button class="btn" id="covidBtn"><img class="img-fluid figure" src="img/covidBtnImg2.png"></button></div>
-        <div class="row mt-1"><button class="btn" id="HDIBtn"><img class="img-fluid figure" src="img/lifeQualityIcon.ico"></button></div>
-        <div class="row mt-1"><button class="btn" id="weatherBtn"><img class="img-fluid figure" src="img/weatherIcon2.ico"></button></div>
-
-      </div> 
-
-       <div class="col-9 col-sm-6 col-lg-4 col-xl-3 table-responsive leaflet-control" id="tableCol">
-        
-      </div>
-    </div>
-  `;
-createDiv('topLeftDiv', 'container-fluid', 'topleft', topLeftDivHTML);
-$('#topLeftDiv').removeClass('leaflet-control');
 
 //setting up the content of the right bottom div:
 var bottomRightDivHTML = `
@@ -794,128 +771,42 @@ createDiv('bottomRightDiv', 'container-fluid', 'bottomright', bottomRightDivHTML
 //INFORMATION TABLE fUNCTIONS BEGINS:
 
 const generalDataTableUpdate = function() {
-  $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-light leaflet-control" id="infoTable">
-          <thead>
-            <tr>
-              <th colspan="2"><img id="flagImg" class="img-fluid" src="${country.flagPath}">  ${country.name}<a href="https://www.wikipedia.org/wiki/${country.fullName.replace(' ', '_')}" class="btn" id="countryWikiBtn" target="_blank"><img class="img-fluid figure" src="img/wiki.ico"></a></th>
-              
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><img class="img-fluid" src="img/capital.ico"></td>
-              <td>${country.capital}</td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/populationIcon.ico"></td>
-              <td>${country.population}</td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/languageIcon.ico"></td>
-              <td id="languagesCell"></td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/currencyIcon.ico"></td>
-              <td>${country.currency.code}(${country.currency.name})</td>      
-            <tr>
-              <td><img class="img-fluid" src="img/exchange.ico"></td>
-              <td>1 USD = ${country.currency.exchangeUSD} ${country.currency.code}</td>      
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/union.ico"></td>
-              <td>${country.regionalBlock.name}</td>      
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/callCode.ico"></td>
-              <td>+${country.callingCode}</td>      
-            </tr>
-          </tbody>
-        </table>
-`;
+  $('#infoNameTxt').html(` ${country.name}`);
+  $('#infoFlagImg').attr('src', country.flagPath);
+  $('#countryWikiBtn').attr('href', `https://en.wikipedia.org/wiki/${country.fullName.replace(' ', '_')}`);
+  $('#capitalTxt').html(country.capital);
+  $('#populationTxt').html(country.population);
+  $('#currencyTxt').html(`${country.currency.name} (${country.currency.code})`);
+  $('#currencyExchangeTxt').html(`1 USD = ${country.currency.exchangeUSD} ${country.currency.code}`);
+  $('#unionTxt').html(country.regionalBlock.name);
+  $('#callingCodeTxt').html(`+${country.callingCode}`);
   
-    country.languages.forEach(language => {
-    $('#languagesCell')[0].insertAdjacentHTML('beforeend', language.name + ", ");
+  country.languages.forEach(language => {
+    $('#languagesTxt')[0].insertAdjacentHTML('beforeend', language.name + ", ");
     });
 }
 
 const covidDataTableUpdate = function() {
-  $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-info leaflet-control" id="covidTable">
-          <thead>
-            <tr>
-              <th colspan="3"><img class="img-fluid" id="flagImg" src="${country.flagPath}">  ${country.name} Covid Statics</th>
-            </tr>
-            <tr>
-              <th><img class="img-fluid" src="img/covid.ico"></th>
-              <th>Yesterday</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><img class="img-fluid" src="img/cases.ico"> Cases</td>
-              <td>${country.covidData.yesterday.confirmed}</td>
-              <td>${country.covidData.total.confirmed}</td>
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/death.ico"> Deaths</td>
-              <td>${country.covidData.yesterday.deaths}</td>
-              <td>${country.covidData.total.deaths}</td>  
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/injection.ico"> Cured</td>
-              <td>${country.covidData.yesterday.recovered}</td>
-              <td>${country.covidData.total.recovered}</td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/active.ico"> Active</td>
-              <td>${country.covidData.yesterday.active}</td>
-              <td>${country.covidData.total.active}</td>
-            </tr>
-          </tbody>
-          </table>
-`;
-  
+  $('#covidNameTxt').html(` ${country.name} Covid Statistics`);
+  $('#covidFlagImg').attr('src', country.flagPath);
+  $('#yesterdayConfirmed').html(country.covidData.yesterday.confirmed);
+  $('#totalConfirmed').html(country.covidData.total.confirmed);
+  $('#yesterdayDeaths').html(country.covidData.yesterday.deaths);
+  $('#totalDeaths').html(country.covidData.total.deaths);
+  $('#yesterdayRecovered').html(country.covidData.yesterday.recovered);
+  $('#totalRecovered').html(country.covidData.total.recovered);
+  $('#yesterdayActive').html(country.covidData.yesterday.active);
+  $('#totalActive').html(country.covidData.total.active);
 }
 
 const hdiDataTableUpdate = function() {
-  $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-info leaflet-control" id="hdiTable">
-          <thead>
-            <tr>
-              <th colspan="3"><img class="img-fluid" id="flagImg" src="${country.flagPath}"> ${country.name} Life Quality</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><img class="img-fluid" src="img/hdiValue.ico"></td>
-              <td>HDI value</td>
-              <td>${country.humanDevelopmentData.hdiValue}</td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/ladder.ico"></td>
-              <td>HDI rank</td>
-              <td>${country.humanDevelopmentData.hdiRank}</td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/gniCapita.ico"></td>
-              <td>GNI/capita (USD)</td>
-              <td>${country.humanDevelopmentData.gniPerCapita}</td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/jobs.ico"></td>
-              <td>Unemployment</td>
-              <td>${country.humanDevelopmentData.totalUnemploymentRate}%</td>     
-            </tr>
-            <tr>
-              <td><img class="img-fluid" src="img/life.ico"></td>
-              <td>Life Expctancy</td>
-              <td>${country.humanDevelopmentData.lifeExpectancyAtBirth}</td>     
-            </tr>
-          </tbody>
-          </table>
-`;
+  $('#hdiNameTxt').html(` ${country.name} Life Quality`);
+  $('#hdiFlagImg').attr('src', country.flagPath);
+  $('#hdiValueTxt').html(country.humanDevelopmentData.hdiValue);
+  $('#hdiRankTxt').html(country.humanDevelopmentData.hdiRank);
+  $('#gniTxt').html(country.humanDevelopmentData.gniPerCapita);
+  $('#unemploymentTxt').html(country.humanDevelopmentData.totalUnemploymentRate + '%');
+  $('#lifeExpctancyTxt').html(country.humanDevelopmentData.lifeExpectancyAtBirth);
 }
 
 const weatherTableUpdate = function(weatherData, place) {
@@ -934,151 +825,50 @@ const weatherTableUpdate = function(weatherData, place) {
     minTemps[i] = weatherData.daily[i].temp.min;
     maxTemps[i] = weatherData.daily[i].temp.max;
   }
-  $('#tableCol')[0].innerHTML = `
-        <table class="table  table-sm table-striped table-hover table-dark leaflet-control" id="weatherTable">
-          <thead>
-            <tr>
-              <th colspan="4">${place} Weather Forecast</th>
-            </tr>
-          </thead>
-          <tbody>
-
-            <tr>
-              <td>${weekDays[daysMs[0].getDay()]}</td>
-              <td><figure>
-                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[0]}.png">
-                    <figcaption>${minTemps[0]}°C <span style="color:grey">/</span> ${maxTemps[0]}°C</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/humidity.ico">
-                    <figcaption>${humidities[0]}%</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/wind.ico">
-                    <figcaption>${windSpeeds[0]}km/h</figcaption>
-                  </figure>
-              </td>
-            </tr>
-
-            <tr>
-              <td>${weekDays[daysMs[1].getDay()]}</td>
-              <td><figure>
-                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[1]}.png">
-                    <figcaption>${minTemps[1]}°C <span style="color:grey">/</span> ${maxTemps[1]}°C</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/humidity.ico">
-                    <figcaption>${humidities[1]}%</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/wind.ico">
-                    <figcaption>${windSpeeds[1]}km/h</figcaption>
-                  </figure>
-              </td>
-            </tr>
-
-            <tr>
-              <td>${weekDays[daysMs[2].getDay()]}</td>
-              <td><figure>
-                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[2]}.png">
-                    <figcaption>${minTemps[2]}°C  <span style="color:grey">/</span>  ${maxTemps[2]}°C</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/humidity.ico">
-                    <figcaption>${humidities[2]}%</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/wind.ico">
-                    <figcaption>${windSpeeds[2]}km/h</figcaption>
-                  </figure>
-              </td>
-            </tr>
-
-            <tr>
-              <td>${weekDays[daysMs[3].getDay()]}</td>
-              <td><figure>
-                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[3]}.png">
-                    <figcaption>${minTemps[3]}°C  <span style="color:grey">/</span>  ${maxTemps[3]}°C</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/humidity.ico">
-                    <figcaption>${humidities[3]}%</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/wind.ico">
-                    <figcaption>${windSpeeds[3]}km/h</figcaption>
-                  </figure>
-              </td>
-            </tr>
-
-            <tr>
-              <td>${weekDays[daysMs[4].getDay()]}</td>
-              <td><figure>
-                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[4]}.png">
-                    <figcaption>${minTemps[4]}°C  <span style="color:grey">/</span>  ${maxTemps[4]}°C</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/humidity.ico">
-                    <figcaption>${humidities[4]}%</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/wind.ico">
-                    <figcaption>${windSpeeds[4]}km/h</figcaption>
-                  </figure>
-              </td>
-            </tr>
-
-            <tr>
-              <td>${weekDays[daysMs[5].getDay()]}</td>
-              <td><figure>
-                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[5]}.png">
-                    <figcaption>${minTemps[5]}°C  <span style="color:grey">/</span>  ${maxTemps[5]}°C</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/humidity.ico">
-                    <figcaption>${humidities[5]}%</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/wind.ico">
-                    <figcaption>${windSpeeds[5]}km/h</figcaption>
-                  </figure>
-              </td>
-            </tr>
-
-            <tr>
-              <td>${weekDays[daysMs[6].getDay()]}</td>
-              <td><figure>
-                    <img class="img-fluid" src="http://openweathermap.org/img/w/${icons[6]}.png">
-                    <figcaption>${minTemps[6]}°C  <span style="color:grey">/</span>  ${maxTemps[6]}°C</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/humidity.ico">
-                    <figcaption>${humidities[6]}%</figcaption>
-                  </figure>
-              </td>
-              <td><figure>
-                    <img class="img-fluid" src="img/weather/wind.ico">
-                    <figcaption>${windSpeeds[06]}km/h</figcaption>
-                  </figure>
-              </td>
-            </tr>
-
-          </tbody>
-          </table>
-`;
+  
+  $('#weatherNameTxt').html(`${place} Weather Forecast`);
+  
+  $('#day0Txt').html(weekDays[daysMs[0].getDay()]);
+  $('#day0Icon').attr('src', `http://openweathermap.org/img/w/${icons[0]}.png`);
+  $('#day0TempTxt').html(`${minTemps[0]}°C <span style="color:grey">/</span> ${maxTemps[0]}°C`);
+  $('#day0HumidityTxt').html(humidities[0] + '%');
+  $('#day0WindSpeedTxt').html(windSpeeds[0] + 'km/h');
+  
+  $('#day1Txt').html(weekDays[daysMs[1].getDay()]);
+  $('#day1Icon').attr('src', `http://openweathermap.org/img/w/${icons[1]}.png`);
+  $('#day1TempTxt').html(`${minTemps[1]}°C <span style="color:grey">/</span> ${maxTemps[1]}°C`);
+  $('#day1HumidityTxt').html(humidities[1] + '%');
+  $('#day1WindSpeedTxt').html(windSpeeds[1] + 'km/h');
+  
+  $('#day2Txt').html(weekDays[daysMs[2].getDay()]);
+  $('#day2Icon').attr('src', `http://openweathermap.org/img/w/${icons[2]}.png`);
+  $('#day2TempTxt').html(`${minTemps[2]}°C <span style="color:grey">/</span> ${maxTemps[2]}°C`);
+  $('#day2HumidityTxt').html(humidities[2] + '%');
+  $('#day2WindSpeedTxt').html(windSpeeds[2] + 'km/h');
+  
+  $('#day3Txt').html(weekDays[daysMs[3].getDay()]);
+  $('#day3Icon').attr('src', `http://openweathermap.org/img/w/${icons[3]}.png`);
+  $('#day3TempTxt').html(`${minTemps[3]}°C <span style="color:grey">/</span> ${maxTemps[3]}°C`);
+  $('#day3HumidityTxt').html(humidities[3] + '%');
+  $('#day3WindSpeedTxt').html(windSpeeds[3] + 'km/h');
+  
+  $('#day4Txt').html(weekDays[daysMs[4].getDay()]);
+  $('#day4Icon').attr('src', `http://openweathermap.org/img/w/${icons[4]}.png`);
+  $('#day4TempTxt').html(`${minTemps[4]}°C <span style="color:grey">/</span> ${maxTemps[4]}°C`);
+  $('#day4HumidityTxt').html(humidities[4] + '%');
+  $('#day4WindSpeedTxt').html(windSpeeds[4] + 'km/h');
+  
+  $('#day5Txt').html(weekDays[daysMs[5].getDay()]);
+  $('#day5Icon').attr('src', `http://openweathermap.org/img/w/${icons[5]}.png`);
+  $('#day5TempTxt').html(`${minTemps[5]}°C <span style="color:grey">/</span> ${maxTemps[5]}°C`);
+  $('#day5HumidityTxt').html(humidities[5] + '%');
+  $('#day5WindSpeedTxt').html(windSpeeds[5] + 'km/h');
+  
+  $('#day6Txt').html(weekDays[daysMs[6].getDay()]);
+  $('#day6Icon').attr('src', `http://openweathermap.org/img/w/${icons[6]}.png`);
+  $('#day6TempTxt').html(`${minTemps[6]}°C <span style="color:grey">/</span> ${maxTemps[6]}°C`);
+  $('#day6HumidityTxt').html(humidities[6] + '%');
+  $('#day6WindSpeedTxt').html(windSpeeds[6] + 'km/h');
 }
 
 //INFORMATION TABLE FUNCTIONS END:
@@ -1119,6 +909,10 @@ $('#infoBtn').click(function() {
   if (infoTableStatus != "general") {
     generalDataTableUpdate();
     infoTableStatus = "general";
+    $('#covidTable').hide();
+    $('#hdiTable').hide();
+    $('#weathertable').hide();
+    $('#infoTable').show();
     $('#tableCol').show();
     //avoiding bubling events on elements:
   removeEventPropagation([$('#countryWikiBtn'), $('#infoTable')], 'click');
@@ -1134,7 +928,11 @@ $('#covidBtn').click(function() {
   if (infoTableStatus != "covid") {
     covidDataTableUpdate();
     infoTableStatus = "covid";
+    $('#infoTable').hide();
+    $('#hdiTable').hide();
+    $('#weathertable').hide();
     $('#tableCol').show();
+    $('#covidTable').show();
     removeEventPropagation([$('#covidTable')], 'click');
     removeEventPropagation([$('#covidTable')], 'dblclick')
   } else {
@@ -1148,6 +946,10 @@ $('#HDIBtn').click(function() {
   if (infoTableStatus != "hdi") {
     hdiDataTableUpdate();
     infoTableStatus = "hdi";
+    $('#infoTable').hide();
+    $('#covidTable').hide();
+    $('#weathertable').hide();
+    $('#hdiTable').show();
     $('#tableCol').show();
     removeEventPropagation([$('#hdiTable')], 'click');
     removeEventPropagation([$('#hdiTable')], 'dblclick');

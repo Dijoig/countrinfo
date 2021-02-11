@@ -13,8 +13,7 @@
 }
 
 #selectionRow {
-  position:relative;
-  bottom: 5px;
+  
 }
 
 #btnRow {
@@ -54,13 +53,11 @@
 }
 
 #countrySelection {
-  position: relative;
-  font-size: 120%;
-  width: 150px;
-  height: 20px;
+  width: 200px;
+  
 }
 
-#flagImg {
+#infoFlagImg, #covidFlagImg, hdiFlagImg {
   height: 50px;
   width: 70px;
 }
