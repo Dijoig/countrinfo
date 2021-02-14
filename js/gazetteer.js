@@ -210,32 +210,48 @@ const ajaxOpenWeatherMap = function(lat, lon, name) {
           var weatherIcon = new L.DivIcon({
                 className: 'weatherDivIcon',
                 html: `<figure>
-                        <img class="weatherIconImg" src='http://openweathermap.org/img/w/${weatherData.current.weather[0].icon}.png'>
+                        <img class="weatherIconImg leaflet-control" src='http://openweathermap.org/img/w/${weatherData.current.weather[0].icon}.png'>
                         <figcaption>${weatherData.current.temp}°C</figcaption>  
                       </figure>
                       `
             });
-          let marker = L.marker([lat, lon], {icon: weatherIcon}).addTo(weatherCluster);
-          weatherCluster.addTo(geoJsonLayer);
+          let marker = L.marker([lat, lon], {icon: weatherIcon});
           
+          removeEventPropagation([marker], 'dblclick');
           marker.on('click', function() {
-            if (infoTableStatus != "weather") {
+            if (infoTableStatus != 'weather') {
               weatherTableUpdate(weatherData, name);
-              infoTableStatus = "weather";
-              $('#covidTable').hide();
-              $('#hdiTable').hide();
-              $('#infoTable').hide();
-              $('#weatherTable').show();
-              $('#tableCol').show();
-              removeEventPropagation([$('#weatherTable')], 'click');
-              removeEventPropagation([$('#weatherTable')], 'dblclick');
+                $('#tableCol').show();
+                $('#weatherTable').show();
+                $('#covidTable').hide();
+                $('#hdiTable').hide();
+                $('#infoTable').hide();
+                infoTableStatus = 'weather';
             } else {
-              $('#tableCol').hide();
-              infoTableStatus = "";
+              if ($('#weatherNameTxt').html() != `${name} Weather Forecast`) {
+                weatherTableUpdate(weatherData, name);
+                $('#tableCol').show();
+                $('#weatherTable').show();
+                $('#covidTable').hide();
+                $('#hdiTable').hide();
+                $('#infoTable').hide();
+                infoTableStatus = 'weather';
+                removeEventPropagation([$('#weatherTable')], 'click');
+                removeEventPropagation([$('#weatherTable')], 'dblclick');
+
+              } else {
+                $('#weatherTable').hide();
+                $('#tableCol').hide;
+                $('#weatherNameTxt').html('');
+                infoTableStatus = '';
+              }
             }
+              
             event.stopPropagation();
           });
-          removeEventPropagation([marker], 'dblclick');
+          
+          marker.addTo(weatherCluster);
+          weatherCluster.addTo(geoJsonLayer);
           
       },
         error: function(error) {
@@ -374,8 +390,13 @@ const ajaxOpenCageReverse = function(lat, lng) {
         success: function(result) {
           //console.log(result);
           clickISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
-          placeUpdate(result);
-            
+          //placeUpdate(result);
+          
+          if (clickISO3 != country.code.iso3) {
+            $('#countrySelection').val(clickISO3);
+            $('#countrySelection').change();
+            weatherBtnStatus = false;
+            }
             //console.log(clickISO3);
         },
         error: function(error) {
@@ -398,10 +419,11 @@ const ajaxOpenCageUser = function(userLat, userLng) {
           //console.log(result);
           userISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
           //calls to the ajax routines using the user coords and iso3:
-          ajaxCountryBorders(userISO3);
-          ajaxOpenWeather(userLat, userLng);
+          $('#countrySelection').val(userISO3);
+          $('#countrySelection').change();
+          //ajaxOpenWeather(userLat, userLng);
           //updating the place object with data from the php routines and binding the popup with the user place data:
-          placeUpdate(result);
+          //placeUpdate(result);
           //popupGenerator(userLat, userLng);
           
         },
@@ -897,7 +919,8 @@ $("#countrySelection").change(function(e) {
 //adding an event listener to the mylocationBtn:
 $('#myLocationBtn').click(function() {
   if (country.code.iso3 != userISO3) {
-    ajaxOpenCageUser(userLat, userLng);
+    $('#countrySelection').val(userISO3);
+    $('#countrySelection').change();
   } else {
     alert('Already showing information about the country you are currently in!');
   }
@@ -911,7 +934,7 @@ $('#infoBtn').click(function() {
     infoTableStatus = "general";
     $('#covidTable').hide();
     $('#hdiTable').hide();
-    $('#weathertable').hide();
+    $('#weatherTable').hide();
     $('#infoTable').show();
     $('#tableCol').show();
     //avoiding bubling events on elements:
@@ -930,7 +953,7 @@ $('#covidBtn').click(function() {
     infoTableStatus = "covid";
     $('#infoTable').hide();
     $('#hdiTable').hide();
-    $('#weathertable').hide();
+    $('#weatherTable').hide();
     $('#tableCol').show();
     $('#covidTable').show();
     removeEventPropagation([$('#covidTable')], 'click');
@@ -948,7 +971,7 @@ $('#HDIBtn').click(function() {
     infoTableStatus = "hdi";
     $('#infoTable').hide();
     $('#covidTable').hide();
-    $('#weathertable').hide();
+    $('#weatherTable').hide();
     $('#hdiTable').show();
     $('#tableCol').show();
     removeEventPropagation([$('#hdiTable')], 'click');
@@ -961,6 +984,7 @@ $('#HDIBtn').click(function() {
 
 //adding an event listener to the weather Btn:
 $('#weatherBtn').click(function() {
+  
   $('#tableCol').hide();
   if (!weatherBtnStatus) {
     if(!weatherCluster) {
@@ -972,14 +996,17 @@ $('#weatherBtn').click(function() {
     geoJsonLayer.removeLayer(capitalMarker);
     weatherBtnStatus = true;
   } else {
-      if (infoTableStatus == "weather") {
-        infoTableStatus = "";
-    } else {
+      if (infoTableStatus != 'weather') {
         geoJsonLayer.removeLayer(weatherCluster);
         wikiCluster.addTo(geoJsonLayer);
         capitalMarker.addTo(geoJsonLayer);
+        $('#weatherNameTxt').html('');
         weatherBtnStatus = false;
-    }
+      } else {
+        infoTableStatus = '';
+        
+      }
+    
   }
   event.stopPropagation();
 });
@@ -987,14 +1014,7 @@ $('#weatherBtn').click(function() {
  
 //defining onMap click event to get weather and address data from the click:
 const onMapClick = function(e) {
-  //ajaxOpenWeather(e.latlng.lat, e.latlng.lng);
   ajaxOpenCageReverse(e.latlng.lat, e.latlng.lng);
-  setTimeout(function() {
-    if (clickISO3 != country.code.iso3) {
-    ajaxCountryBorders(clickISO3);
-    }
-  }, 600);
-  weatherBtnStatus = false;
  }
 worldMap.on('click', onMapClick);
 //defining onPopupOpen event function to center the map using the popup container:
