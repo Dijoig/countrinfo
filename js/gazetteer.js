@@ -230,13 +230,13 @@ const ajaxCovid19 = function(iso3) {
     dataType: 'json',
     data: {countryCode: iso3},
     success: function(result) {
-      console.log(result);
+      //console.log(result);
       country.covidData = {};
+      
+      
+      if (result['data'] && result['data'].length > 0) {
       var latestData = result['data'][result['data'].length - 1];
       var subtractionData = result['data'][result['data'].length - 2];
-      console.log(latestData);
-      console.log(subtractionData);
-      if (result['data'].length > 0) {
       country.covidData.total = {
         date: latestData['Date'],
         confirmed: latestData['Confirmed'],
