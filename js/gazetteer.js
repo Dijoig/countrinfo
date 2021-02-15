@@ -20,7 +20,7 @@ const weather = {};
 //place object that will store data from the user location or click event on map:
 var place = {};
 //defining function that will be called at openCageUser and openCageReverse to fill the place object:
-const placeUpdate = function(openCageResult) {
+/*const placeUpdate = function(openCageResult) {
   var placeData = openCageResult['data'][0];
   place = {};
   place.formatted = placeData['formatted'];
@@ -28,7 +28,7 @@ const placeUpdate = function(openCageResult) {
   place.components = placeData['components'];
   
   //console.log(place);
-}
+}*/
 
 //populating select element using a php routine that will get the countries from countryBroders.geo.json:
 const populateSelectElement = function() {
@@ -194,7 +194,7 @@ const ajaxOpenWeather = function(lat, lon) {
 
 
 
-//defining function that will make call to openWeather to get the coords for the country capital, and display a marker on the map with the results;
+//defining function that will make call to openWeather to get the coords for the country capital, and display a marker on the map with the results also will load a marker for the user location if the user location button is used;
 const ajaxOpenWeatherCapital = function(city) {
   $.ajax({
     url: './php/openWeatherCapital.php',
@@ -210,6 +210,11 @@ const ajaxOpenWeatherCapital = function(city) {
 });
       capitalMarker = L.marker([result['data']['lat'], result['data']['lon']], {icon: capitalIcon}).addTo(geoJsonLayer);
       capitalMarker.bindPopup(`${country.capital}`);
+      
+      if (userISO3 == country.code.iso3) {
+        let userMarker = L.marker([userLat, userLng]).addTo(geoJsonLayer);
+        userMarker.bindPopup('You');
+      }
     },
     error: function(error) {
       console.log(error);
@@ -264,6 +269,7 @@ const ajaxCovid19 = function(iso3) {
     error: function(error) {
       //console.log(error);
       alert('Covid data not available for this country at the moment');
+      country.covidData = {};
       country.covidData.total = {
         date: 'not available',
         confirmed: 'not available',
@@ -340,7 +346,7 @@ const ajaxOpenCageReverse = function(lat, lng) {
           clickISO3 = result['data'][0]['components']["ISO_3166-1_alpha-3"];
           //placeUpdate(result);
           
-          if (clickISO3 != country.code.iso3) {
+          if (clickISO3 && clickISO3 != country.code.iso3) {
             $('#countrySelection').val(clickISO3);
             $('#countrySelection').change();
             weatherBtnStatus = false;
@@ -448,7 +454,7 @@ const ajaxOpenWeatherMap = function(lat, lon, name) {
           var weatherIcon = new L.DivIcon({
                 className: 'weatherDivIcon',
                 html: `<figure>
-                        <img class="weatherIconImg leaflet-control" src='http://openweathermap.org/img/w/${weatherData.current.weather[0].icon}.png'>
+                        <img class="weatherIconImg leaflet-control" src='https://openweathermap.org/img/w/${weatherData.current.weather[0].icon}.png'>
                         <figcaption>${weatherData.current.temp}°C</figcaption>  
                       </figure>
                       `
@@ -557,7 +563,7 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           data: {boundingBox: boundingBox},
           success: function(result) {
             //console.log(result);
-
+            
             result['data'].forEach(geoname => {
               ajaxWikipediaImage(geoname);
               /*var wikiIcon = L.icon({
@@ -585,6 +591,8 @@ const ajaxGeonameWikipedia = function(boundingBox) {
                   } */ 
                });
             wikiCluster.addTo(geoJsonLayer);
+            
+            
           },
           error: function(error) {
             //console.log(error.responseText);
@@ -779,43 +787,43 @@ const weatherTableUpdate = function(weatherData, place) {
   $('#weatherNameTxt').html(`${place} Weather Forecast`);
   
   $('#day0Txt').html(weekDays[daysMs[0].getDay()]);
-  $('#day0Icon').attr('src', `http://openweathermap.org/img/w/${icons[0]}.png`);
+  $('#day0Icon').attr('src', `https://openweathermap.org/img/w/${icons[0]}.png`);
   $('#day0TempTxt').html(`${minTemps[0]}°C <span style="color:grey">/</span> ${maxTemps[0]}°C`);
   $('#day0HumidityTxt').html(humidities[0] + '%');
   $('#day0WindSpeedTxt').html(windSpeeds[0] + 'km/h');
   
   $('#day1Txt').html(weekDays[daysMs[1].getDay()]);
-  $('#day1Icon').attr('src', `http://openweathermap.org/img/w/${icons[1]}.png`);
+  $('#day1Icon').attr('src', `https://openweathermap.org/img/w/${icons[1]}.png`);
   $('#day1TempTxt').html(`${minTemps[1]}°C <span style="color:grey">/</span> ${maxTemps[1]}°C`);
   $('#day1HumidityTxt').html(humidities[1] + '%');
   $('#day1WindSpeedTxt').html(windSpeeds[1] + 'km/h');
   
   $('#day2Txt').html(weekDays[daysMs[2].getDay()]);
-  $('#day2Icon').attr('src', `http://openweathermap.org/img/w/${icons[2]}.png`);
+  $('#day2Icon').attr('src', `https://openweathermap.org/img/w/${icons[2]}.png`);
   $('#day2TempTxt').html(`${minTemps[2]}°C <span style="color:grey">/</span> ${maxTemps[2]}°C`);
   $('#day2HumidityTxt').html(humidities[2] + '%');
   $('#day2WindSpeedTxt').html(windSpeeds[2] + 'km/h');
   
   $('#day3Txt').html(weekDays[daysMs[3].getDay()]);
-  $('#day3Icon').attr('src', `http://openweathermap.org/img/w/${icons[3]}.png`);
+  $('#day3Icon').attr('src', `https://openweathermap.org/img/w/${icons[3]}.png`);
   $('#day3TempTxt').html(`${minTemps[3]}°C <span style="color:grey">/</span> ${maxTemps[3]}°C`);
   $('#day3HumidityTxt').html(humidities[3] + '%');
   $('#day3WindSpeedTxt').html(windSpeeds[3] + 'km/h');
   
   $('#day4Txt').html(weekDays[daysMs[4].getDay()]);
-  $('#day4Icon').attr('src', `http://openweathermap.org/img/w/${icons[4]}.png`);
+  $('#day4Icon').attr('src', `https://openweathermap.org/img/w/${icons[4]}.png`);
   $('#day4TempTxt').html(`${minTemps[4]}°C <span style="color:grey">/</span> ${maxTemps[4]}°C`);
   $('#day4HumidityTxt').html(humidities[4] + '%');
   $('#day4WindSpeedTxt').html(windSpeeds[4] + 'km/h');
   
   $('#day5Txt').html(weekDays[daysMs[5].getDay()]);
-  $('#day5Icon').attr('src', `http://openweathermap.org/img/w/${icons[5]}.png`);
+  $('#day5Icon').attr('src', `https://openweathermap.org/img/w/${icons[5]}.png`);
   $('#day5TempTxt').html(`${minTemps[5]}°C <span style="color:grey">/</span> ${maxTemps[5]}°C`);
   $('#day5HumidityTxt').html(humidities[5] + '%');
   $('#day5WindSpeedTxt').html(windSpeeds[5] + 'km/h');
   
   $('#day6Txt').html(weekDays[daysMs[6].getDay()]);
-  $('#day6Icon').attr('src', `http://openweathermap.org/img/w/${icons[6]}.png`);
+  $('#day6Icon').attr('src', `https://openweathermap.org/img/w/${icons[6]}.png`);
   $('#day6TempTxt').html(`${minTemps[6]}°C <span style="color:grey">/</span> ${maxTemps[6]}°C`);
   $('#day6HumidityTxt').html(humidities[6] + '%');
   $('#day6WindSpeedTxt').html(windSpeeds[6] + 'km/h');
