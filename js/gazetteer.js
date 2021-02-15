@@ -227,6 +227,8 @@ const ajaxCovid19 = function(iso3) {
   $.ajax({
     url: 'https://api.covid19api.com/total/country/' + iso3,
     type: 'GET',
+    crossDomain: true,
+    headers: {  'Access-Control-Allow-Origin': 'https://api.covid19api.com/total/country/' + iso3 },
     dataType: 'json',
     success: function(result) {
       //console.log(result)
@@ -596,7 +598,7 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           },
           error: function(error) {
             //console.log(error.responseText);
-            alert('There was an error trying to retrieve data for this country... Please try again');
+            alert('There was an error trying to retrieve data for this country... Please try again by clicking on the country');
             country.code = {};
           }
         });
