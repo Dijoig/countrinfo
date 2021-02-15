@@ -111,7 +111,7 @@ const ajaxRestCountries = function(countryName) {
           }
         }
       
-      console.log(country);
+      //console.log(country);
       //logic to pudate the general data table in case it is the one visible:
       if (infoTableStatus == "general") {
         generalDataTableUpdate();
@@ -192,73 +192,7 @@ const ajaxOpenWeather = function(lat, lon) {
       });
 }
 
-//defining function that will call the php routine to get weather from openWeather to fill the weather map with info:
-const ajaxOpenWeatherMap = function(lat, lon, name) {
-  $.ajax({
-        url: './php/openWeatherOneCall.php',
-        type: 'POST',
-        dataType: 'json',
-        data: {
-          lat: lat,
-          lon: lon
-        },
-        success: function(result) {
-          console.log(result);
-  
-          var weatherData = result['data'];
-          
-          var weatherIcon = new L.DivIcon({
-                className: 'weatherDivIcon',
-                html: `<figure>
-                        <img class="weatherIconImg leaflet-control" src='http://openweathermap.org/img/w/${weatherData.current.weather[0].icon}.png'>
-                        <figcaption>${weatherData.current.temp}°C</figcaption>  
-                      </figure>
-                      `
-            });
-          let marker = L.marker([lat, lon], {icon: weatherIcon});
-          
-          removeEventPropagation([marker], 'dblclick');
-          marker.on('click', function() {
-            if (infoTableStatus != 'weather') {
-              weatherTableUpdate(weatherData, name);
-                $('#tableCol').show();
-                $('#weatherTable').show();
-                $('#covidTable').hide();
-                $('#hdiTable').hide();
-                $('#infoTable').hide();
-                infoTableStatus = 'weather';
-            } else {
-              if ($('#weatherNameTxt').html() != `${name} Weather Forecast`) {
-                weatherTableUpdate(weatherData, name);
-                $('#tableCol').show();
-                $('#weatherTable').show();
-                $('#covidTable').hide();
-                $('#hdiTable').hide();
-                $('#infoTable').hide();
-                infoTableStatus = 'weather';
-                removeEventPropagation([$('#weatherTable')], 'click');
-                removeEventPropagation([$('#weatherTable')], 'dblclick');
 
-              } else {
-                $('#weatherTable').hide();
-                $('#tableCol').hide;
-                $('#weatherNameTxt').html('');
-                infoTableStatus = '';
-              }
-            }
-              
-            event.stopPropagation();
-          });
-          
-          marker.addTo(weatherCluster);
-          weatherCluster.addTo(geoJsonLayer);
-          
-      },
-        error: function(error) {
-          console.log(error);
-        }
-      });
-}
 
 //defining function that will make call to openWeather to get the coords for the country capital, and display a marker on the map with the results;
 const ajaxOpenWeatherCapital = function(city) {
@@ -328,7 +262,21 @@ const ajaxCovid19 = function(iso3) {
       }
     },
     error: function(error) {
-      console.log(error);
+      //console.log(error);
+      alert('Covid data not available for this country at the moment');
+      country.covidData.total = {
+        date: 'not available',
+        confirmed: 'not available',
+        active: 'not available',
+        deaths: 'not available',
+        recovered: 'not available'
+      }
+      country.covidData.yesterday = {
+          confirmed: 'not available',
+          deaths: 'not available',
+          recovered: 'not available',
+          active: 'not available'
+        }
     }
   });
 }
@@ -465,7 +413,7 @@ const ajaxGeonameIdChildren = function(geonameId) {
           dataType: 'json',
           data: {geonameId: geonameId},
           success: function(result) {
-            console.log(result);
+            //console.log(result);
             geoJsonLayer.removeLayer(wikiCluster);
             weatherCluster = L.markerClusterGroup();
             result['data'].forEach(geoname => {
@@ -482,67 +430,74 @@ const ajaxGeonameIdChildren = function(geonameId) {
         });
 }
 
-//defining function that will be called inside ajaxGeonameIdChildren to loop thorugh the subregion of the country and get markers for each of their own subregion:
-/*const ajaxGeonameIdChildren2 = function(geonameId, markerCluster) {
+//defining function that will call the php routine to get weather from openWeather to fill the weather map with info:
+const ajaxOpenWeatherMap = function(lat, lon, name) {
   $.ajax({
-          url: './php/geonameChildren.php',
-          type: 'POST',
-          dataType: 'json',
-          data: {geonameId: geonameId},
-          success: function(result) {
-            //console.log(result);
-            result['data'].forEach(geoname => {
-              
-              var townIcon = L.icon({
-                iconUrl: 'img/town.ico',
-                iconSize: [20, 20],
-                iconAnchor: [15, 0]
+        url: './php/openWeatherOneCall.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+          lat: lat,
+          lon: lon
+        },
+        success: function(result) {
+          //console.log(result);
+  
+          var weatherData = result['data'];
+          
+          var weatherIcon = new L.DivIcon({
+                className: 'weatherDivIcon',
+                html: `<figure>
+                        <img class="weatherIconImg leaflet-control" src='http://openweathermap.org/img/w/${weatherData.current.weather[0].icon}.png'>
+                        <figcaption>${weatherData.current.temp}°C</figcaption>  
+                      </figure>
+                      `
             });
-              
-             let marker = L.marker([geoname.lat, geoname.lng], {icon: townIcon}).addTo(markerCluster);
-              marker.bindPopup(`${geoname.name}`);
-              marker.on('click', function() {
-                ajaxGeonameWikipedia(geoname.lat, geoname.lng);
-                //worldMap.flyTo([geoname.lat, geoname.lng]);
-                if (this.clicked != true) {
-                var innerCluster2 = L.markerClusterGroup();
-                ajaxGeonameIdChildren3(geoname.geonameId, innerCluster2);
-                geoJsonLayer.addLayer(innerCluster2);
-                this.clicked = true;
-                  }
-              });
-            })
-          },
-          error: function(error) {
-            console.log(error);
-          }
-        });
-}*/
+          let marker = L.marker([lat, lon], {icon: weatherIcon});
+          
+          removeEventPropagation([marker], 'dblclick');
+          marker.on('click', function() {
+            if (infoTableStatus != 'weather') {
+              weatherTableUpdate(weatherData, name);
+                $('#tableCol').show();
+                $('#weatherTable').show();
+                $('#covidTable').hide();
+                $('#hdiTable').hide();
+                $('#infoTable').hide();
+                infoTableStatus = 'weather';
+            } else {
+              if ($('#weatherNameTxt').html() != `${name} Weather Forecast`) {
+                weatherTableUpdate(weatherData, name);
+                $('#tableCol').show();
+                $('#weatherTable').show();
+                $('#covidTable').hide();
+                $('#hdiTable').hide();
+                $('#infoTable').hide();
+                infoTableStatus = 'weather';
+                removeEventPropagation([$('#weatherTable')], 'click');
+                removeEventPropagation([$('#weatherTable')], 'dblclick');
 
-//defining function that will be called inside ajaxGeonameIdChildren2 to loop thorugh the subregion of the country and get markers for each of their own subregion:
-/*const ajaxGeonameIdChildren3 = function(geonameId, markerCluster) {
-  $.ajax({
-          url: './php/geonameChildren.php',
-          type: 'POST',
-          dataType: 'json',
-          data: {geonameId: geonameId},
-          success: function(result) {
-           // console.log(result);
-            result['data'].forEach(geoname => {
-              var townIcon = L.icon({
-                iconUrl: 'img/town2.ico',
-                iconSize: [20, 20],
-                iconAnchor: [15, 0]
-            });
-              let marker = L.marker([geoname.lat, geoname.lng], {icon:       townIcon}).addTo(markerCluster);
-              marker.bindPopup(`${geoname.name}`);
-            });
-          },
-          error: function(error) {
-            console.log(error);
-          }
-        });
-}*/
+              } else {
+                $('#weatherTable').hide();
+                $('#tableCol').hide;
+                $('#weatherNameTxt').html('');
+                infoTableStatus = '';
+              }
+            }
+              
+            event.stopPropagation();
+          });
+          
+          marker.addTo(weatherCluster);
+          weatherCluster.addTo(geoJsonLayer);
+          
+      },
+        error: function(error) {
+          console.log(error);
+        }
+      });
+}
+
 
 //function to get the image of the wikipedia marker:
 const ajaxWikipediaImage = function(geoname) {
@@ -601,8 +556,8 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           dataType: 'json',
           data: {boundingBox: boundingBox},
           success: function(result) {
-            console.log(result);
-           
+            //console.log(result);
+
             result['data'].forEach(geoname => {
               ajaxWikipediaImage(geoname);
               /*var wikiIcon = L.icon({
@@ -632,41 +587,14 @@ const ajaxGeonameWikipedia = function(boundingBox) {
             wikiCluster.addTo(geoJsonLayer);
           },
           error: function(error) {
-            console.log(error.responseText);
+            //console.log(error.responseText);
+            alert('There was an error trying to retrieve data for this country... Please try again');
+            country.code = {};
           }
         });
 }
 
-//defining funtion that will call the php routine to retrieve the weatherstations data for the given boundingbox:
-/*const ajaxGeonameWeatherStations = function(boundingBox) {
-  $.ajax({
-           url: './php/geonameWeatherStations.php',
-          type: 'POST',
-          dataType: 'json',
-          data: {boundingBox: boundingBox},
-          success: function(result) {
-            console.log(result);
-            
-            result['data'].forEach(weatherStation => {
-              var weatherIcon = L.icon({
-                iconUrl: `img/weather/weather2.ico`,
-                iconSize: [30, 30],
-                iconAnchor: [15, 0]
-              });
-              
-              var marker = L.marker([weatherStation.lat, weatherStation.lng], {icon: weatherIcon});
-              var pipRes = leafletPip.pointInLayer(marker.getLatLng(), geoJsonLayer);
-              if (pipRes.length) {
-                marker.addTo(geoJsonLayer);
-              }
-            });
-            
-          },
-          error: function(error) {
-            console.log(error);
-          }
-        });
-}*/
+
 //defining the function that will make the ajax request to the php routine handling the country borders and call ajaxRestCountries:
 const ajaxCountryBorders = function(iso3) {
   $.ajax({
@@ -1028,23 +956,3 @@ worldMap.on('popupopen', onPopupOpen);
 
 
 
-//Test functions
-/*var i = 0;
-var testList = [];
-
-  
-setTimeout(function() {
-  setInterval(function(){
-    if (i < $('#countryOptions > option').length) {
-      var isoTest = $('#countryOptions > option')[i].value;
-      i++;
-      try {
-        ajaxCountryBorders(isoTest);
-      } catch(e) {
-        testList.push(isoTest);
-      }
-    } else {
-      console.log(testList);
-    }
-  }, 5000)
-}, 5000);*/
