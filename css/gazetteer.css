@@ -63,7 +63,8 @@
 }
 
 #tableCol {
- display: none;
+  
+  display: none;
 }
 
 #infoTable  {
@@ -175,6 +176,30 @@
   font-size: 125%;
   font-style: italic;
   font-weight: bold;
+}
+
+@media screen and (max-height: 800px)  {
+  #tableCol {
+    height: 690px;
+  }
+}
+
+@media screen and (max-height: 700px)  {
+  #tableCol {
+    height: 590px;
+  }
+}
+
+@media screen and (max-height: 600px)  {
+  #tableCol {
+    height: 490px;
+  }
+}
+
+@media screen and (max-height: 500px)  {
+  #tableCol {
+    height: 390px;
+  }
 }
 
 @media screen and (max-height: 400px)  {
