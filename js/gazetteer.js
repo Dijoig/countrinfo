@@ -15,20 +15,7 @@ var weatherCluster;
 
 //country obj that will store data from the selected country:
 const country = {};
-//weather object that will store data from the current weather and forecast:
-const weather = {};
-//place object that will store data from the user location or click event on map:
-var place = {};
-//defining function that will be called at openCageUser and openCageReverse to fill the place object:
-/*const placeUpdate = function(openCageResult) {
-  var placeData = openCageResult['data'][0];
-  place = {};
-  place.formatted = placeData['formatted'];
-  place.timeZone = placeData['annotations']['timezone']['name'];
-  place.components = placeData['components'];
-  
-  //console.log(place);
-}*/
+
 
 //populating select element using a php routine that will get the countries from countryBroders.geo.json:
 const populateSelectElement = function() {
@@ -226,7 +213,7 @@ const ajaxOpenWeatherCapital = function(city) {
 const ajaxCovid19 = function(iso3) {
   $.ajax({
     url: './php/covidTest.php',
-    type: 'GET',
+    type: 'POST',
     dataType: 'json',
     data: {countryCode: iso3},
     success: function(result) {
@@ -271,7 +258,7 @@ const ajaxCovid19 = function(iso3) {
     },
     error: function(error) {
       //console.log(error);
-      alert('Covid data not available for this country at the moment');
+      
       country.covidData = {};
       country.covidData.total = {
         date: 'not available',
@@ -378,10 +365,7 @@ const ajaxOpenCageUser = function(userLat, userLng) {
           //calls to the ajax routines using the user coords and iso3:
           $('#countrySelection').val(userISO3);
           $('#countrySelection').change();
-          //ajaxOpenWeather(userLat, userLng);
-          //updating the place object with data from the php routines and binding the popup with the user place data:
-          //placeUpdate(result);
-          //popupGenerator(userLat, userLng);
+          
           
         },
         error: function(error) {
@@ -398,15 +382,15 @@ const ajaxGeonameId = function(iso2) {
           dataType: 'json',
           data: {countryCode: iso2},
           success: function(result) {
-            console.log(result);
+            //console.log(result);
             var geoname = result['data'][0];
             country.areaKm = geoname['areaInSqKm'];
             country.geonameId = geoname['geonameId'];
             country.boundingBox = {north: geoname['north'], south: geoname['south'], east: geoname['east'], west: geoname['west']};
             
-            //ajaxGeonameIdChildren(country.geonameId);
+            
             ajaxGeonameWikipedia(country.boundingBox);
-            //ajaxGeonameWeatherStations(country.boundingBox);
+            
           },
           error: function(error) {
             console.log(error);
@@ -566,40 +550,20 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           data: {boundingBox: boundingBox},
           success: function(result) {
             //console.log(result);
-            
-            result['data'].forEach(geoname => {
-              ajaxWikipediaImage(geoname);
-              /*var wikiIcon = L.icon({
-                    iconUrl: `img/wikiFeatures/${geoname.feature}.ico`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 0]
-                  });
-              let marker = L.marker([geoname.lat, geoname.lng], {icon: wikiIcon});
-              var pipRes = leafletPip.pointInLayer(marker.getLatLng(), geoJsonLayer);
-              if (pipRes.length) {
-                  var imageHTML = '';
-                  ajaxWikipediaImage(geoname, marker);
-                if (geoname.thumbnailImg) {
-                    imageHTML = `<br><img id="wikiImg" src="${geoname.thumbnailImg}">`;
-                    }
-                  var popupContent = `<div id="wikiPopupDiv">
-                                        <p>${geoname.summary}<a id="wikiAnchor" href="https://${geoname.wikipediaUrl}" target='_blank'>read more</a>${imageHTML}</p>
-                                      </div>`;
-                var wikiPopup = L.popup().setContent(popupContent);
-                
-                  
-                  marker.addTo(wikiCluster);
-                  marker.bindPopup(wikiPopup);
-                  removeEventPropagation([$(marker)], 'dblclick');
-                  } */ 
-               });
-            wikiCluster.addTo(geoJsonLayer);
+            if (result['data']) {
+              result['data'].forEach(geoname => {
+                ajaxWikipediaImage(geoname);
+                });
+              wikiCluster.addTo(geoJsonLayer);
+            } else {
+              country.code = {};
+            }
             
             
           },
           error: function(error) {
             //console.log(error.responseText);
-            alert('There was an error trying to retrieve data for this country... Please try again by clicking on the country');
+            
             country.code = {};
           }
         });
@@ -712,17 +676,14 @@ newDiv({ position: position}).addTo(worldMap);
 
 //setting up the content of the right bottom div:
 var bottomRightDivHTML = `
-  <div class="row">
+  
 
-    <div class="col-6">
-      
-    </div>
     
-    <div class="col-6">
-      <button class="btn" id="myLocationBtn"><img class="img-fluid" id="locationImg" id="locationImg" src="img/locationIcon.ico"></button>
+    <div style="z-index: 1">
+      <button style="z-index: 1" class="btn" id="myLocationBtn"><img class="img-fluid" id="locationImg" id="locationImg" src="img/location2.ico"></button>
     </div>
 
-  </div>  
+  
 `;
 createDiv('bottomRightDiv', 'container-fluid', 'bottomright', bottomRightDivHTML);
 
