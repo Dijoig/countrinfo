@@ -409,11 +409,12 @@ const ajaxGeonameIdChildren = function(geonameId) {
             //console.log(result);
             geoJsonLayer.removeLayer(wikiCluster);
             weatherCluster = L.markerClusterGroup();
+            if (result['data']) {
             result['data'].forEach(geoname => {
               
-              ajaxOpenWeatherMap(geoname.lat, geoname.lng, geoname.name);
+                ajaxOpenWeatherMap(geoname.lat, geoname.lng, geoname.name);
               });
-            
+            }
             worldMap.fitBounds(geoJsonLayer.getBounds());
             
           },
@@ -656,40 +657,6 @@ $('document').ready(function() {
 //DOCUMENT READY EVENT ENDS
 
 
-
-//INSERTION OF DIV ELEMENTS TO THE MAP BEGIN:
-//defining function to create a div element on the map:
-function createDiv(idName, className, position, HTML) {
-L.Control.textbox = L.Control.extend({
-		onAdd: function(map) {
-      var div = L.DomUtil.create('div');
-      div.id = idName;
-      div.className = className;
-      div.innerHTML = HTML;
-      return div;
-		}
-	});
-const newDiv = function(opts) { return new L.Control.textbox(opts);}
-newDiv({ position: position}).addTo(worldMap);
-}
-
-
-//setting up the content of the right bottom div:
-var bottomRightDivHTML = `
-  
-
-    
-    <div style="z-index: 1">
-      <button style="z-index: 1" class="btn" id="myLocationBtn"><img class="img-fluid" id="locationImg" id="locationImg" src="img/location2.ico"></button>
-    </div>
-
-  
-`;
-createDiv('bottomRightDiv', 'container-fluid', 'bottomright', bottomRightDivHTML);
-
-//INSERTION OF DIV ELEMENTS TO THE MAP END:
-
-
 //INFORMATION TABLE fUNCTIONS BEGINS:
 
 const generalDataTableUpdate = function() {
@@ -806,7 +773,7 @@ const removeEventPropagation = function(elementList, e) {
     });
   });
 }
-removeEventPropagation([$("#countrySelection"), $('#myLocationBtn'), $('#infoBtn'), $('#covidBtn'), $('#HDIBtn'), $('#weatherBtn')], 'dblclick');
+removeEventPropagation([$("#countrySelection"), $('#infoBtn'), $('#covidBtn'), $('#HDIBtn'), $('#weatherBtn')], 'dblclick');
 
 //adding an event listener to the click event at the country selection box to stop propagation of map click events:
 removeEventPropagation([$('#countrySelection')], 'click');
@@ -814,17 +781,6 @@ removeEventPropagation([$('#countrySelection')], 'click');
 //adding an event listener to the change event of the country selection:
 $("#countrySelection").change(function(e) {
   ajaxCountryBorders($('#countrySelection').val());
-});
-
-//adding an event listener to the mylocationBtn:
-$('#myLocationBtn').click(function() {
-  if (country.code.iso3 != userISO3) {
-    $('#countrySelection').val(userISO3);
-    $('#countrySelection').change();
-  } else {
-    alert('Already showing information about the country you are currently in!');
-  }
-  event.stopPropagation();
 });
 
 //adding event listener to infoBtn:
