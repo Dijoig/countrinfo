@@ -107,7 +107,7 @@ const ajaxRestCountries = function(countryName) {
       //calling the APIs:
       ajaxGeonameId(country.code.iso2);
       ajaxCovid19(country.code.iso3);
-      //ajaxOpenExchangeRate(country.currency.code);
+      ajaxOpenExchangeRate(country.currency.code);
       ajaxHDI(country.code.iso3);
       ajaxOpenWeatherCapital(country.capital);
       
@@ -126,60 +126,13 @@ const ajaxOpenExchangeRate = function(currencyCode) {
     dataType: 'json',
     success: function(result) {
       country.currency.exchangeUSD = result['data'][currencyCode];
-      generalData();
+      
     },
     error: function(error) {
       console.log(error);
     }
   });
 }
-
-//defining the function that will make the calls to the routines that will get weather forecast data from openWeather api:
-const ajaxOpenWeather = function(lat, lon) {
-  $.ajax({
-        url: './php/openWeatherOneCall.php',
-        type: 'POST',
-        dataType: 'json',
-        data: {
-          lat: lat,
-          lon: lon
-        },
-        success: function(result) {
-          //console.log(result);
-          //adding data to the weather object defined at the top of the code using the openWeather data:
-          var weatherData = result['data'];
-          
-          weather.currentTemp = weatherData['current']['temp'];
-          weather.currentFeelsLike = weatherData['current']['feels_like'];
-          
-          
-          for (var i = 0; i < weatherData['daily'].length; i++) {
-            weather[i] = {
-                timeUnix: weatherData['daily'][i]['dt'],
-              
-                tempAvg: ((weatherData['daily'][i]['temp']['day'] + weatherData['daily'][i]['temp']['morn'] + weatherData['daily'][i]['temp']['eve'] + weatherData['daily'][i]['temp']['night'])/4).toFixed(2),
-              
-                tempFeelsLikeAvg: ((weatherData['daily'][i]['feels_like']['day'] + weatherData['daily'][i]['feels_like']['morn'] + weatherData['daily'][i]['feels_like']['eve'] + weatherData['daily'][i]['feels_like']['night'])/4).toFixed(2),
-              
-                tempMax : weatherData['daily'][i]['temp']['max'],
-                tempMin : weatherData['daily'][i]['temp']['min'],
-                humidity: weatherData['daily'][i]['humidity'],
-                wind: (weatherData['daily'][i]['wind_speed'] * 3.6).toFixed(2),
-                sky: weatherData['daily'][i]['weather'][0]['description']
-            }
-          }
-        
-            
-          //weatherUpdate();        
-          //console.log(weather);
-        },
-        error: function(error) {
-          console.log(error);
-        }
-      });
-}
-
-
 
 //defining function that will make call to openWeather to get the coords for the country capital, and display a marker on the map with the results also will load a marker for the user location if the user location button is used;
 const ajaxOpenWeatherCapital = function(city) {
@@ -569,7 +522,6 @@ const ajaxGeonameWikipedia = function(boundingBox) {
           }
         });
 }
-
 
 //defining the function that will make the ajax request to the php routine handling the country borders and call ajaxRestCountries:
 const ajaxCountryBorders = function(iso3) {
