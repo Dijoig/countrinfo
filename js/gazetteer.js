@@ -179,7 +179,7 @@ const ajaxCovid19 = function(iso3) {
     dataType: 'json',
     data: {countryCode: iso3},
     success: function(result) {
-      //console.log(result);
+      console.log(result);
       country.covidData = {};
       
       
@@ -278,7 +278,7 @@ const ajaxHDI = function(iso3) {
     }
     ,
     error: function(error) {
-      console.log(error);
+      //console.log(error);
     }
   });
 }
