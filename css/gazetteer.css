@@ -68,7 +68,7 @@
 }
 
 
-.btn {
+.btnX {
   background-color: grey;
   position: relative;
   width: 40px;
@@ -152,14 +152,12 @@
 }
 
 #weatherTable {
-  font-size: ;
-  background-color: ;
   color: white;
   text-align: center;
 }
 
 #weatherTable td {
-  font-size: ;
+ 
   color: white;
   text-align: center;
 }

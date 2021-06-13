@@ -108,10 +108,6 @@ const ajaxRestCountries = function(countryName) {
         }
       
       //console.log(country);
-      //logic to pudate the general data table in case it is the one visible:
-      if (infoTableStatus == "general") {
-        generalDataTableUpdate();
-      }
       
       //calling the APIs:
       ajaxGeonameId(country.code.iso2);
@@ -179,7 +175,7 @@ const ajaxCovid19 = function(iso3) {
     dataType: 'json',
     data: {countryCode: iso3},
     success: function(result) {
-      console.log(result);
+      //console.log(result);
       country.covidData = {};
       
       
@@ -413,35 +409,10 @@ const ajaxOpenWeatherMap = function(lat, lon, name) {
           
           removeEventPropagation([marker], 'dblclick');
           marker.on('click', function() {
-            if (infoTableStatus != 'weather') {
               weatherTableUpdate(weatherData, name);
-                $('#tableCol').show();
-                $('#weatherTable').show();
-                $('#covidTable').hide();
-                $('#hdiTable').hide();
-                $('#infoTable').hide();
-                infoTableStatus = 'weather';
-            } else {
-              if ($('#weatherNameTxt').html() != `${name} Weather Forecast`) {
-                weatherTableUpdate(weatherData, name);
-                $('#tableCol').show();
-                $('#weatherTable').show();
-                $('#covidTable').hide();
-                $('#hdiTable').hide();
-                $('#infoTable').hide();
-                infoTableStatus = 'weather';
-                removeEventPropagation([$('#weatherTable')], 'click');
-                removeEventPropagation([$('#weatherTable')], 'dblclick');
-
-              } else {
-                $('#weatherTable').hide();
-                $('#tableCol').hide;
-                $('#weatherNameTxt').html('');
-                infoTableStatus = '';
-              }
-            }
-              
-            event.stopPropagation();
+              $('#weatherTableModal').modal();
+              $('#weatherTable').show();             
+              event.stopPropagation();
           });
           
           marker.addTo(weatherCluster);
@@ -631,8 +602,9 @@ const generalDataTableUpdate = function() {
   $('#unionTxt').html(country.regionalBlock.name);
   $('#callingCodeTxt').html(`+${country.callingCode}`);
   
+  $('#languagesTxt').html('');
   country.languages.forEach(language => {
-    $('#languagesTxt')[0].insertAdjacentHTML('beforeend', language.name + ", ");
+    $('#languagesTxt')[0].insertAdjacentHTML('beforeend', language.name + " ");
     });
 }
 
@@ -746,57 +718,23 @@ $("#countrySelection").change(function(e) {
 
 //adding event listener to infoBtn:
 $('#infoBtn').click(function() { 
-  if (infoTableStatus != "general") {
     generalDataTableUpdate();
-    infoTableStatus = "general";
-    $('#covidTable').hide();
-    $('#hdiTable').hide();
-    $('#weatherTable').hide();
-    $('#infoTable').show();
-    $('#tableCol').show();
-    //avoiding bubling events on elements:
-  removeEventPropagation([$('#countryWikiBtn'), $('#infoTable')], 'click');
-  removeEventPropagation([$('#countryWikiBtn'), $('#infoTable')], 'dblclick');
-  } else {
-    $('#tableCol').toggle();
-  }
-  event.stopPropagation();
+    $('infoTableModal').show();
+    event.stopPropagation();
 });
 
 //adding an event listener to the covidBtn:
 $('#covidBtn').click(function() {
-  if (infoTableStatus != "covid") {
     covidDataTableUpdate();
-    infoTableStatus = "covid";
-    $('#infoTable').hide();
-    $('#hdiTable').hide();
-    $('#weatherTable').hide();
-    $('#tableCol').show();
     $('#covidTable').show();
-    removeEventPropagation([$('#covidTable')], 'click');
-    removeEventPropagation([$('#covidTable')], 'dblclick')
-  } else {
-    $('#tableCol').toggle();
-  }
-  event.stopPropagation();
+    event.stopPropagation();
 });
 
 //adding an event listener to the HDI btn:
 $('#HDIBtn').click(function() {
-  if (infoTableStatus != "hdi") {
     hdiDataTableUpdate();
-    infoTableStatus = "hdi";
-    $('#infoTable').hide();
-    $('#covidTable').hide();
-    $('#weatherTable').hide();
     $('#hdiTable').show();
-    $('#tableCol').show();
-    removeEventPropagation([$('#hdiTable')], 'click');
-    removeEventPropagation([$('#hdiTable')], 'dblclick');
-  } else {
-    $('#tableCol').toggle();
-  }
-  event.stopPropagation();
+    event.stopPropagation();
 });
 
 //adding an event listener to the weather Btn:
@@ -813,18 +751,12 @@ $('#weatherBtn').click(function() {
     geoJsonLayer.removeLayer(capitalMarker);
     weatherBtnStatus = true;
   } else {
-      if (infoTableStatus != 'weather') {
         geoJsonLayer.removeLayer(weatherCluster);
         wikiCluster.addTo(geoJsonLayer);
         capitalMarker.addTo(geoJsonLayer);
         $('#weatherNameTxt').html('');
         weatherBtnStatus = false;
-      } else {
-        infoTableStatus = '';
-        
-      }
-    
-  }
+      } 
   event.stopPropagation();
 });
 
